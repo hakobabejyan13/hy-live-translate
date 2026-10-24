@@ -153,7 +153,7 @@ def main():
             if text_hy:
                 inputs = tokenizer(text_hy, return_tensors="pt").to(args.device)
                 with torch.inference_mode():
-                    out = mt.generate(**inputs, forced_bos_token_id=eng_id, max_new_tokens=128)
+                    out = mt.generate(**inputs, forced_bos_token_id=eng_id)
                 text_en = tokenizer.batch_decode(out, skip_special_tokens=True)[0]
             else:
                 text_en = ""
