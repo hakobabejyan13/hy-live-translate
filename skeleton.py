@@ -1,4 +1,4 @@
-"""Walking skeleton: microphone -> Silero VAD -> faster-whisper (hy) -> NLLB-200 (hy->en) -> terminal.
+"""Walking skeleton: microphone -> Silero VAD -> NVIDIA FastConformer (hy) -> NLLB-200 (hy->en) -> terminal.
 
 Single source, no speaker labels. Logs latency at each stage:
 capture -> VAD -> queue -> ASR -> MT -> CLI, measured from the end of speech.
@@ -16,7 +16,7 @@ from pathlib import Path
 import numpy as np
 import sounddevice as sd
 import torch
-from faster_whisper import WhisperModel
+import nemo.collections.asr as nemo_asr
 from silero_vad import VADIterator, load_silero_vad
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
@@ -25,7 +25,7 @@ CHUNK = 512  # Silero VAD expects 512-sample chunks at 16 kHz
 MAX_SEGMENT_S = 5.0
 PRE_ROLL_S = 1.0  # audio kept before speech start so the VAD start index stays reachable
 
-ASR_MODEL = "large-v3-turbo"
+ASR_MODEL = "nvidia/stt_hy_fastconformer_hybrid_large_pc"  # chosen by bench/bench_asr.py, see DECISIONS.md
 MT_MODEL = "facebook/nllb-200-distilled-600M"
 
 
@@ -102,7 +102,6 @@ def main():
     parser.add_argument("--mic", type=int, default=None, help="input device index (default: system default)")
     parser.add_argument("--list-devices", action="store_true", help="list audio devices and exit")
     parser.add_argument("--device", default="cuda", help="cuda or cpu")
-    parser.add_argument("--compute-type", default="float16", help="faster-whisper compute type (float16, int8, ...)")
     args = parser.parse_args()
 
     if args.list_devices:
@@ -113,8 +112,8 @@ def main():
         raise RuntimeError("CUDA not available to PyTorch. Install the CUDA build: "
                            "pip install -r requirements.txt (it pulls torch from the cu128 index).")
 
-    print(f"Loading ASR model {ASR_MODEL} on {args.device} ({args.compute_type})...")
-    asr = WhisperModel(ASR_MODEL, device=args.device, compute_type=args.compute_type)
+    print(f"Loading ASR model {ASR_MODEL} on {args.device}...")
+    asr = nemo_asr.models.ASRModel.from_pretrained(ASR_MODEL).to(args.device).eval()
     print(f"Loading MT model {MT_MODEL} on {args.device}...")
     tokenizer = AutoTokenizer.from_pretrained(MT_MODEL, src_lang="hye_Armn")
     mt = AutoModelForSeq2SeqLM.from_pretrained(MT_MODEL).to(args.device).eval()
@@ -126,7 +125,7 @@ def main():
     log_file = open(log_path, "w", newline="", encoding="utf-8")
     log = csv.writer(log_file)
     log.writerow(["time", "audio_s", "forced_cut", "capture_s", "vad_s", "queue_s", "asr_s", "mt_s", "cli_s",
-                  "total_s", "avg_logprob", "no_speech_prob", "text_hy", "text_en"])
+                  "total_s", "avg_logprob", "text_hy", "text_en"])
 
     seg_queue = queue.Queue()
     stop = threading.Event()
@@ -143,11 +142,12 @@ def main():
                 continue
             t_asr_start = time.time()
 
-            parts, _ = asr.transcribe(seg.samples, language="hy", beam_size=1, condition_on_previous_text=False)
-            parts = list(parts)
-            text_hy = " ".join(p.text.strip() for p in parts).strip()
-            avg_logprob = float(np.mean([p.avg_logprob for p in parts])) if parts else float("nan")
-            no_speech = float(np.mean([p.no_speech_prob for p in parts])) if parts else float("nan")
+            out = asr.transcribe([seg.samples], batch_size=1, return_hypotheses=True, verbose=False)
+            if isinstance(out, tuple):  # some NeMo versions return (best, all) for transducers
+                out = out[0]
+            hyp = out[0]
+            text_hy = hyp.text.strip()
+            avg_logprob = float(hyp.score) / max(len(hyp.y_sequence), 1)  # transducer log-prob per token
             t_asr_done = time.time()
 
             if text_hy:
@@ -176,10 +176,10 @@ def main():
             }
             total = t_printed - seg.t_speech_end
             print("           latency: " + " | ".join(f"{k} {v:.2f}s" for k, v in stages.items())
-                  + f" | total {total:.2f}s   (logprob {avg_logprob:.2f}, no_speech {no_speech:.2f})\n", flush=True)
+                  + f" | total {total:.2f}s   (logprob {avg_logprob:.2f})\n", flush=True)
             log.writerow([stamp, f"{len(seg.samples) / SAMPLE_RATE:.2f}", seg.forced_cut,
                           *(f"{v:.3f}" for v in stages.values()), f"{total:.3f}",
-                          f"{avg_logprob:.3f}", f"{no_speech:.3f}", text_hy, text_en])
+                          f"{avg_logprob:.3f}", text_hy, text_en])
             log_file.flush()
     except KeyboardInterrupt:
         print(f"\nStopped. Latency log: {log_path}")

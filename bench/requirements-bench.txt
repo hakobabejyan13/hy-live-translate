@@ -1,3 +1,4 @@
-# On top of ../requirements.txt (same venv). NeMo needs its own venv, see bench_asr.py.
+# On top of ../requirements.txt (same venv)
+faster-whisper>=1.1.0
 soundfile
 huggingface_hub
