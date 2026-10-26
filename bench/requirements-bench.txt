@@ -2,3 +2,6 @@
 faster-whisper>=1.1.0
 soundfile
 huggingface_hub
+psutil
+sacrebleu
+pytest
