@@ -1,0 +1,9 @@
+run,model,clip_set,clips,wer,cer,mean_s,max_s
+20261027_000624,nvidia-fastconformer,fleurs,100,10.6,3.3,0.078,0.182
+20261027_000846,nvidia-fastconformer,hakob,10,0.0,0.0,0.064,0.069
+20261027_004526,whisper-turbo,fleurs,100,42.9,13.0,0.697,4.858
+20261027_004526,whisper-turbo,hakob,10,90.2,40.1,0.622,3.181
+20261027_005012,chillarmo-turbo,fleurs,100,17.2,7.0,0.803,1.883
+20261027_005012,chillarmo-turbo,hakob,10,4.9,0.9,0.291,0.323
+20261027_005012,seamless-m4t-v2,fleurs,100,12.1,4.1,0.781,1.777
+20261027_005012,seamless-m4t-v2,hakob,10,4.9,0.4,0.360,0.402
