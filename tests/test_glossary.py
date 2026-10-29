@@ -1,36 +1,56 @@
 import pytest
 
-from glossary import GLOSSARY_FILE, Glossary, load
+from glossary import GLOSSARY_FILE, Glossary, attach, load
 
 
 @pytest.fixture
 def g(tmp_path):
     p = tmp_path / "g.tsv"
-    p.write_text("# comment\ncommit\tքոմիթ, կոմիթ\npush\tփուշ\nremote\tռիմոթ\nstash\tսթեշ\n", encoding="utf-8")
+    p.write_text("# comment\ncommit\tքոմիթ, կոմիթ\npush\tփուշ\t# also thorn\nremote\tռիմոթ\nstash\tսթեշ\n"
+                 "ընդհանրապես\tվաբշե\nմեքենա\tմաշին, մաշինա\nհաջող\tպակա\n", encoding="utf-8")
     return Glossary.from_file(p)
 
 
 def test_hakob_examples(g):
-    assert (g.apply("Կոդը գրել, վերջացրել եմ, արդեն քոմիթ ու փուշ եմ արել ռիմոթ։")
+    assert (g.apply("Կոդը գրել, վերջացրել եմ, արդեն քոմիթ ու փուշ եմ արել ռիմոթ։").shown
             == "Կոդը գրել, վերջացրել եմ, արդեն commit ու push եմ արել remote։")
-    assert (g.apply("Փոփոխություններդ դեռ մի կոմիթ արա, ուղղակի սթեշ արա, հետո կնայենք։")
+    assert (g.apply("Փոփոխություններդ դեռ մի կոմիթ արա, ուղղակի սթեշ արա, հետո կնայենք։").for_mt
             == "Փոփոխություններդ դեռ մի commit արա, ուղղակի stash արա, հետո կնայենք։")
 
 
-def test_armenian_ending_kept_with_hyphen(g):
-    assert g.apply("ռիմոթին ուղարկիր") == "remote-ին ուղարկիր"
-    assert g.apply("քոմիթները նայիր") == "commit-ները նայիր"
+def test_english_ending_kept_with_hyphen(g):
+    assert g.apply("ռիմոթին ուղարկիր").shown == "remote-ին ուղարկիր"
+    assert g.apply("քոմիթները նայիր").shown == "commit-ները նայիր"
+
+
+def test_russian_word_shown_as_spoken_but_translated_from_armenian(g):
+    f = g.apply("Վաբշե մաշինով եկա։")
+    assert f.shown == "Վաբշե մաշինով եկա։"
+    assert f.for_mt == "Ընդհանրապես մեքենայով եկա։"
+
+
+def test_armenian_endings_reattached():
+    assert attach("մեքենա", "ը") == "մեքենան"
+    assert attach("մեքենա", "ով") == "մեքենայով"
+    assert attach("մեքենա", "յի") == "մեքենայի"
+    assert attach("տոմս", "ը") == "տոմսը"
+    assert attach("commit", "ը") == "commit-ը"
 
 
 def test_case_insensitive_and_whole_words_only(g):
-    assert g.apply("Քոմիթ արա") == "commit արա"
-    assert g.apply("անքոմիթ") == "անքոմիթ"  # spelling inside a longer word is not touched
-    assert g.apply("փուշը") == "push-ը"
+    assert g.apply("Քոմիթ արա").shown == "commit արա"
+    assert g.apply("անքոմիթ").shown == "անքոմիթ"  # spelling inside a longer word is not touched
+    assert g.apply("փուշը").shown == "push-ը"
 
 
-def test_text_without_jargon_unchanged(g):
+def test_common_word_ending_like_a_loan_is_left_alone(g):
+    assert g.apply("պակաս ժամանակ").for_mt == "պակաս ժամանակ"  # պակա + possessive -ս is not matched
+
+
+def test_text_without_loans_unchanged(g):
     text = "Երևանը Հայաստանի մայրաքաղաքն է։"
-    assert g.apply(text) == text
+    f = g.apply(text)
+    assert f.shown == text and f.for_mt == text
 
 
 def test_bad_lines_fail_loudly(tmp_path):
@@ -47,4 +67,5 @@ def test_bad_lines_fail_loudly(tmp_path):
 
 
 def test_shipped_glossary_loads():
-    assert load(GLOSSARY_FILE)["քոմիթ"] == "commit"
+    table = load(GLOSSARY_FILE)
+    assert table["քոմիթ"] == "commit" and table["վաբշե"] == "ընդհանրապես"

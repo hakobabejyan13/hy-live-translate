@@ -1,17 +1,135 @@
-# English jargon said inside Armenian speech -> the Armenian spellings the ASR model writes for it.
-# Format: english<TAB>spelling, spelling   (see glossary.py). Starting guesses: check the text_hy_asr
-# column of logs/latency_<run>.csv for the spellings the model really produces, and add them here.
-# Careful with spellings that are also real Armenian words (փուշ = thorn): they are replaced everywhere.
+# Loanwords in spoken Armenian -> what goes in their place before translation. See glossary.py.
+# Format: target<TAB>spelling, spelling<TAB>note
+#   Latin target   = English word, shown in the Armenian line and sent to NLLB.
+#   Armenian target = plain Armenian equivalent of a Russian word, sent to NLLB only; the screen shows what was said.
+# Spellings are how the ASR model is expected to write the word by sound. Most are educated guesses: check the
+# text_hy_asr column of logs/latency_<run>.csv and add the spellings the model really produces.
+# Left out on purpose: loans NLLB already knows as Armenian words (ինտերնետ, կոմպյուտեր, ֆայլ, նորմալ, պրոբլեմ is
+# kept below because it is colloquial), and spellings that are also common Armenian words (փուլ = stage,
+# պլան = plan, քոլ = bush, սաղ = all/alive): replacing them would break normal sentences.
+
+# --- English: software and git (Hakob's examples) ---
 commit	քոմիթ, կոմիթ, քոմմիթ, կոմմիթ, քամիթ
-push	փուշ, պուշ
-pull	պուլ  # the model also writes փուլ, but that is a common Armenian word (stage)
+push	փուշ, պուշ	# փուշ is also "thorn"; rare in work talk
+pull	պուլ	# the model also writes փուլ, but that is "stage"
 stash	սթեշ, ստեշ, սթաշ, ստաշ
 remote	ռիմոթ, ռիմոտ, ռեմոտ, ռեմոթ, ռիմոութ
 branch	բրենչ, բրանչ
 merge	մերջ, մըրջ
-deploy	դեփլոյ, դիփլոյ, դեպլոյ
-server	սերվեր, սըրվըր
-bug	բագ
-speaker	սփիքեր, սպիկեր, սփիքր, սփիք
 git	գիթ
-meeting	միթինգ
+deploy	դեփլոյ, դիփլոյ, դեպլոյ
+server	սըրվըր
+bug	բագ
+fix	ֆիքս
+release	ռելիզ, ռիլիզ
+build	բիլդ
+review	ռեվյու, ռիվյու
+request	ռեքվեստ, ռիքվեսթ
+frontend	ֆրոնտենդ, ֆրոնթենդ	# not ֆրոնտ: military front
+backend	բեքենդ, բեքէնդ, բեք
+developer	դեվելոպեր, դեվելոփեր	# not դև: demon
+database	դեյթաբեյս, դատաբազա
+update	ափդեյթ, ապդեյթ, ափդեյտ
+install	ինստալ, ինսթոլ
+save	սեյվ
+download	դաունլոուդ, դաունլոդ
+upload	ափլոուդ, ապլոուդ
+login	լոգին
+password	փասվորդ, պասվորդ
+link	լինկ
+screenshot	սքրինշոթ, սկրինշոտ, սքրին
+laptop	լեփթոփ, լեպտոպ, նոութ
+speaker	սփիքեր, սպիկեր, սփիքր, սփիք
+
+# --- English: workplace ---
+meeting	միթինգ	# միտինգ (with տ) is "rally" and stays Armenian
+call	կոլ
+deadline	դեդլայն, դեդլաին
+task	թասք, տասկ
+feedback	ֆիդբեք, ֆիդբեկ
+report	ռեփորթ, ռեպորտ
+manager	մենեջեր, մենեջր
+team lead	թիմլիդ, տիմլիդ
+standup	սթենդափ, ստենդապ
+sprint	սփրինթ, սպրինտ
+startup	սթարթափ, ստարտապ
+freelance	ֆրիլանս
+office	օֆիս
+email	իմեյլ, իմեիլ, մեյլ
+chat	չաթ, չատ
+online	օնլայն
+offline	օֆլայն
+skill	սքիլ, սկիլ
+challenge	չելենջ
+
+# --- English: everyday and social media ---
+okay	օքեյ, օկեյ, օքէյ
+sorry	սորրի, սորի
+thanks	թենքս, սենկս, թենկս
+please	փլիզ, պլիզ
+bye	բայբայ
+like	լայք
+share	շեր
+post	փոսթ	# պոստ (with պ, տ) is "guard post"
+story	սթորի, ստորի
+comment	կոմենտ, քոմենթ
+follow	ֆոլոու
+cool	քուլ	# not կուլ: swallow
+cringe	քրինջ, կրինջ
+vibe	վայբ
+fake	ֆեյք
+shopping	շոփինգ, շոպինգ
+weekend	ուիքենդ, վիքենդ
+cash	քեշ
+change	չենջ	# also the exchange office
+
+# --- Russian: discourse words and fillers -> Armenian ---
+ընդհանրապես	վաբշե, վապշե, վոբշե, վոոբշե	# вообще
+կարճ ասած	կարոչե, կառոչե	# короче
+իհարկե	կանեշնա, կանեչնո, կոնեչնո	# конечно
+ճիշտ	տոչնը, տոչնո	# точно
+ուղղակի	պրոստը, պրոստո	# просто
+արդեն	ուժե	# уже
+լավ	դավայ, խարաշո, խառաշո	# давай, хорошо
+լուրջ	սերյոզնի, սերյոզնո	# серьёзно
+հետաքրքիր	ինտերեսնի, ինտերեսնո	# интересно
+հասկանալի	պոնյատնո	# понятно
+ոչինչ	նիչեվո, նիչե	# ничего
+ափսոս	ժալկո	# жалко
+արագ	բիստռո, բիստրո	# быстро
+բոլորովին	սավսեմ	# совсем
+վերջ	վսյո	# всё
+շնորհակալություն	սպասիբա, մերսի	# спасибо, merci
+բարև	պրիվետ	# привет
+հաջող	պակա	# пока
+խնդիր	պռոբլեմ	# проблема (the ASR may also write the standard պրոբլեմ, left alone)
+տարբերակ	վարիանտ	# вариант
+
+# --- Russian: everyday nouns -> Armenian ---
+մեքենա	մաշին, մաշինա	# машина
+միկրոավտոբուս	մարշուտկա, մարշրուտկա	# маршрутка
+լուսացույց	սվետաֆոր	# светофор
+պատշգամբ	բալկոն	# балкон
+գրիչ	ռուչկա	# ручка
+տետր	տետռադ, տետրադ	# тетрадь
+սառնարան	խալադիլնիկ, խոլոդիլնիկ	# холодильник
+լվացքի մեքենա	ստիրալնի, ստիրալկա	# стиральная
+սալօջախ	պլիտա	# плита
+լիցքավորիչ	զարյադնիկ, զառյադնիկ, զարյադկա	# зарядник
+կարգավորում	նաստրոյկա, նաստռոյկա	# настройка
+տոմս	բիլետ	# билет
+դրամարկղ	կասսա	# касса
+մանր	սդաչա	# сдача
+արձակուրդ	օտպուսկ, ատպուսկ	# отпуск
+աշխատավարձ	զարպլատա, զառպլատա	# зарплата
+թոշակ	պենսիա	# пенсия
+բաժին	ատդել, օտդել	# отдел
+տեղեկանք	սպրավկա, սպռավկա	# справка
+անձնագիր	պասպորտ	# паспорт
+վերանորոգում	ռեմոնտ	# ремонт
+պատվեր	զակազ	# заказ
+ղեկավար	նաչալնիկ	# начальник
+մուտք	պադյեզդ, պոդյեզդ	# подъезд
+բազմոց	դիվան	# диван (also an old word for a poetry collection; rare in speech)
+ելակ	կլուբնիկա	# клубника
+ոստիկան	մենթ	# мент (slang)

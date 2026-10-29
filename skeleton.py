@@ -42,7 +42,7 @@ LABEL_WIDTH = len("SPEAKER 10")
 
 LINE_COLUMNS = ["time", "device", "source", "speaker", "spk_sim", "audio_s", "forced_cut", "capture_s", "vad_s",
                 "queue_s", "asr_s", "spk_s", "mt_s", "cli_s", "total_s", "over_budget", "asr_tokens", "avg_logprob",
-                "mt_tokens_in", "mt_tokens_out", "mt_capped", "text_hy_asr", "text_hy", "text_en", "wav"]
+                "mt_tokens_in", "mt_tokens_out", "mt_capped", "text_hy_asr", "text_hy", "text_mt_in", "text_en", "wav"]
 SESSION_COLUMNS = ["run", "sources", "device", "device_name", "threads", "asr_model", "mt_model", "speaker_model",
                    "load_s", "vram_peak_gb", "lines", "lines_mic", "lines_loopback", "speakers", "unknown_speaker",
                    "over_budget", "mt_capped", "total_median_s", "total_p95_s", "total_max_s", "asr_median_s",
@@ -137,7 +137,7 @@ def main():
 
     t_load = time.time()
     glossary = Glossary.from_file()
-    print(f"Glossary: {len(glossary.table)} jargon spellings from {GLOSSARY_FILE.name}")
+    print(f"Glossary: {len(glossary.table)} loanword spellings from {GLOSSARY_FILE.name}")
     print(f"Loading ASR model {ASR_MODEL} on {args.device}...")
     asr = Recognizer(args.device)
     print(f"Loading MT model {MT_MODEL} on {args.device}...")
@@ -186,17 +186,17 @@ def main():
                 continue
             t_asr_start = time.time()
             tr = asr.transcribe(seg.samples)
-            text_hy = glossary.apply(tr.text_hy)
+            fixed = glossary.apply(tr.text_hy)
             t_asr_done = time.time()
             spk = speakers.label(seg)
             t_spk_done = time.time()
-            en = mt.translate(text_hy)
+            en = mt.translate(fixed.for_mt)
             t_mt_done = time.time()
 
             stamp = datetime.fromtimestamp(seg.t_speech_end).strftime("%H:%M:%S")
             indent = " " * (len("[00:00:00] ") + LABEL_WIDTH + 1)
             cut = "  [cut at 5s]" if seg.forced_cut else ""
-            line = (f"[{stamp}] {spk.label:<{LABEL_WIDTH}} hy: {text_hy or '(empty)'}{cut}\n"
+            line = (f"[{stamp}] {spk.label:<{LABEL_WIDTH}} hy: {fixed.shown or '(empty)'}{cut}\n"
                     f"{indent}en: {en.text_en or '(empty)'}{'  [MT CAPPED]' if en.capped else ''}\n")
             print(line, end="", flush=True)
             t_printed = time.time()
@@ -226,7 +226,8 @@ def main():
                           "total_s": f"{total:.3f}", "over_budget": over_budget, "asr_tokens": tr.tokens,
                           "avg_logprob": f"{tr.avg_logprob:.3f}", "mt_tokens_in": en.tokens_in,
                           "mt_tokens_out": en.tokens_out, "mt_capped": en.capped,
-                          "text_hy_asr": tr.text_hy, "text_hy": text_hy, "text_en": en.text_en, "wav": wav_name})
+                          "text_hy_asr": tr.text_hy, "text_hy": fixed.shown, "text_mt_in": fixed.for_mt,
+                          "text_en": en.text_en, "wav": wav_name})
             log_file.flush()
             totals.append(total)
             asr_times.append(stages["asr"])
