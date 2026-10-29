@@ -21,10 +21,13 @@ from pathlib import Path
 import numpy as np
 import sounddevice as sd
 import torch
-from silero_vad import VADIterator, load_silero_vad
 
-from asr import ASR_MODEL, Recognizer
-from translate import MT_MODEL, Translator
+DEFAULT_THREADS = torch.get_num_threads()  # read before importing silero_vad: it calls torch.set_num_threads(1)
+
+from silero_vad import VADIterator, load_silero_vad  # noqa: E402
+
+from asr import ASR_MODEL, Recognizer  # noqa: E402
+from translate import MT_MODEL, Translator  # noqa: E402
 
 SAMPLE_RATE = 16000
 CHUNK = 512  # Silero VAD expects 512-sample chunks at 16 kHz
@@ -142,7 +145,8 @@ def main():
     parser.add_argument("--mic", type=int, default=None, help="input device index (default: system default)")
     parser.add_argument("--list-devices", action="store_true", help="list audio devices and exit")
     parser.add_argument("--device", default="cuda", choices=["cuda", "cpu"])
-    parser.add_argument("--threads", type=int, default=None, help="CPU threads for PyTorch (default: PyTorch default)")
+    parser.add_argument("--threads", type=int, default=DEFAULT_THREADS,
+                        help=f"CPU threads for PyTorch (default: {DEFAULT_THREADS}, PyTorch's default here)")
     args = parser.parse_args()
 
     if args.list_devices:
@@ -152,8 +156,7 @@ def main():
     if args.device == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA not available to PyTorch. Install the CUDA build: "
                            "pip install -r requirements.txt (it pulls torch from the cu128 index).")
-    if args.threads:
-        torch.set_num_threads(args.threads)
+    torch.set_num_threads(args.threads)
 
     t_load = time.time()
     print(f"Loading ASR model {ASR_MODEL} on {args.device}...")

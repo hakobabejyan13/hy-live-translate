@@ -31,3 +31,4 @@ def test_recorded_clip_transcribes_to_armenian(asr):
     out = asr.transcribe(audio)
     assert "Հայաստան" in out.text_hy
     assert out.tokens > 0
+    assert -5.0 < out.avg_logprob <= 0.0  # a real log-prob on CPU and GPU, not a raw logit sum

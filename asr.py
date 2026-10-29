@@ -22,6 +22,10 @@ class Transcript:
 class Recognizer:
     def __init__(self, device):
         self.model = nemo_asr.models.ASRModel.from_pretrained(ASR_MODEL, map_location=device).to(device).eval()
+        # The RNNT joint skips log_softmax on CUDA by default (the training loss does it), so hypothesis scores
+        # would be raw logits on GPU but log-probs on CPU. Force it so avg_logprob means the same on both.
+        # argmax is unchanged, so transcripts are identical.
+        self.model.joint.log_softmax = True
 
     def transcribe(self, samples):
         """samples: 16 kHz mono float32 numpy array."""
