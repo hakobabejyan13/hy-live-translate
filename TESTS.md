@@ -50,7 +50,9 @@ Tests use CUDA when PyTorch sees a GPU, otherwise the CPU.
 | | `test_common_word_ending_like_a_loan_is_left_alone` | `պակաս` ("less") is not read as `պակա` (пока) + ending |
 | | `test_text_without_loans_unchanged` | Plain Armenian passes through untouched |
 | | `test_bad_lines_fail_loudly` | Missing tab, a spelling listed for two words, or a non-Armenian spelling raise at startup |
-| | `test_shipped_glossary_loads` | `glossary.tsv` in the repo is valid |
+| | `test_shipped_glossary_loads` | `glossary.tsv` in the repo is valid; փուլ and փուշ have context rules |
+| | `test_ambiguous_words_follow_context` (8 cases) | փուլ/փուշ become pull/push next to git words (գիթ, branch, commit, remote...) or before արա/արեցի; stay Armenian as "stage"/"thorn" otherwise, including "Այդ փուլը արեցինք" |
+| | `test_bad_context_rule_fails_loudly` | A malformed context column raises at startup |
 
 Not covered by unit tests (needs Windows audio devices): opening the WASAPI mic and loopback in
 `audio_capture.capture()`. Check it live with `python skeleton.py --list-devices`, then a call.

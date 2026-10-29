@@ -1,20 +1,25 @@
 # Loanwords in spoken Armenian -> what goes in their place before translation. See glossary.py.
-# Format: target<TAB>spelling, spelling<TAB>note
+# Format: target<TAB>spelling, spelling[<TAB>near=word, word; then=word, word]
+#   The optional third column is a context rule: the word is only replaced when a `near` word is within 3 words,
+#   or the next word is a `then` word. Use it for spellings that are also ordinary Armenian words (փուլ, փուշ).
 #   Latin target   = English word, shown in the Armenian line and sent to NLLB.
 #   Armenian target = plain Armenian equivalent of a Russian word, sent to NLLB only; the screen shows what was said.
 # Spellings are how the ASR model is expected to write the word by sound. Most are educated guesses: check the
 # text_hy_asr column of logs/latency_<run>.csv and add the spellings the model really produces.
 # Left out on purpose: loans NLLB already knows as Armenian words (ինտերնետ, կոմպյուտեր, ֆայլ, նորմալ, պրոբլեմ is
-# kept below because it is colloquial), and spellings that are also common Armenian words (փուլ = stage,
-# պլան = plan, քոլ = bush, սաղ = all/alive): replacing them would break normal sentences.
+# kept below because it is colloquial), and spellings that are also common Armenian words with no clear context
+# (պլան = plan, քոլ = bush, սաղ = all/alive): replacing them would break normal sentences.
 
 # --- English: software and git (Hakob's examples) ---
 commit	քոմիթ, կոմիթ, քոմմիթ, կոմմիթ, քամիթ
-push	փուշ, պուշ	# փուշ is also "thorn"; rare in work talk
-pull	պուլ	# the model also writes փուլ, but that is "stage"
+push	պուշ
+push	փուշ	near=գիթ, գիտհաբ, ռեպո, ռեպոզիտորի, բրենչ, բրանչ, մեյն, մաստեր, օրիջին, քոմիթ, կոմիթ, ռիմոթ, ռիմոտ, ռեմոտ, մերջ, սթեշ, ստեշ, փուլ, պուլ; then=արա, արեք, անել, անեմ, անես, անի, անենք, անեք, անեն, անում, արել, արեցի, արեցիր, արեց, արեցինք, արեցին, կանեմ, կանես, կանի, կանենք, անելու, արած	# փուշ is also "thorn"
+pull	պուլ
+pull	փուլ	near=գիթ, գիտհաբ, ռեպո, ռեպոզիտորի, բրենչ, բրանչ, մեյն, մաստեր, օրիջին, քոմիթ, կոմիթ, ռիմոթ, ռիմոտ, ռեմոտ, մերջ, սթեշ, ստեշ, փուշ, պուշ; then=արա, արեք, անել, անեմ, անես, անի, անենք, անեք, անեն, անում, արել, արեցի, արեցիր, արեց, արեցինք, արեցին, կանեմ, կանես, կանի, կանենք, անելու, արած	# փուլ is also "stage"
 stash	սթեշ, ստեշ, սթաշ, ստաշ
 remote	ռիմոթ, ռիմոտ, ռեմոտ, ռեմոթ, ռիմոութ
 branch	բրենչ, բրանչ
+main	մեյն
 merge	մերջ, մըրջ
 git	գիթ
 deploy	դեփլոյ, դիփլոյ, դեպլոյ

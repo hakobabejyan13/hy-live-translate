@@ -68,4 +68,27 @@ def test_bad_lines_fail_loudly(tmp_path):
 
 def test_shipped_glossary_loads():
     table = load(GLOSSARY_FILE)
-    assert table["քոմիթ"] == "commit" and table["վաբշե"] == "ընդհանրապես"
+    assert table["քոմիթ"].target == "commit" and table["վաբշե"].target == "ընդհանրապես"
+    assert table["փուլ"].conditional and table["փուշ"].conditional
+
+
+@pytest.mark.parametrize("spoken, shown", [
+    ("Իսկ որ մտար գիթ, փուլ արա։", "Իսկ որ մտար git, pull արա։"),  # git nearby
+    ("Փուլ արա, հետո փուշ արա։", "pull արա, հետո push արա։"),  # bare word + արա
+    ("Քոմիթ ու փուշ եմ արել ռիմոթ։", "commit ու push եմ արել remote։"),  # commit/remote nearby
+    ("Մեյն բրենչից փուլ արեցի։", "main branch-ից pull արեցի։"),
+    ("Առաջին փուլը արդեն ավարտեցինք։", "Առաջին փուլը արդեն ավարտեցինք։"),  # stage
+    ("Երկրորդ փուլ, երրորդ փուլ։", "Երկրորդ փուլ, երրորդ փուլ։"),  # stage next to stage
+    ("Այդ փուլը արեցինք։", "Այդ փուլը արեցինք։"),  # "we did that stage": `then` needs the bare word
+    ("Ձեռքս փուշ մտավ։", "Ձեռքս փուշ մտավ։"),  # thorn
+])
+def test_ambiguous_words_follow_context(spoken, shown):
+    g = Glossary.from_file()
+    assert g.apply(spoken).shown == shown
+
+
+def test_bad_context_rule_fails_loudly(tmp_path):
+    p = tmp_path / "g.tsv"
+    p.write_text("pull\tփուլ\tclose=գիթ\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="context must look like"):
+        load(p)
