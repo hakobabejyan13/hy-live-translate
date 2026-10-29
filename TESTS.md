@@ -25,7 +25,8 @@ Tests use CUDA when PyTorch sees a GPU, otherwise the CPU.
 | | `test_wrong_channel_count_fails_loudly`, `test_unusable_format_fails_loudly` | Unexpected device formats raise instead of producing wrong-speed audio |
 | | `test_rechunker_keeps_remainder` | Leftover samples are carried to the next chunk, none lost |
 | `tests/test_vad.py` (scripted detector in place of Silero) | `test_segment_cut_at_pause_has_exact_samples_and_times` | Segment holds exactly the start..end samples; `t_speech_end` and `t_closing_chunk` are right |
-| | `test_long_speech_is_cut_at_max_length_and_continues` | Speech longer than 5 s is cut at 5 s, flagged `forced_cut`, and no audio is lost or doubled across cuts |
+| | `test_long_speech_is_cut_at_max_length_and_continues` | Speech longer than 5 s is cut within the last 2 s before the 5 s mark, flagged `forced_cut`, and no audio is lost or doubled across cuts |
+| | `test_forced_cut_lands_in_the_quiet_gap_not_mid_word` | A forced cut goes into the quietest 50 ms (a pause between words), and the next segment starts right after it |
 | | `test_end_right_after_forced_cut_emits_nothing_more` | No empty segment after a forced cut |
 | | `test_buffer_does_not_grow_in_silence` | Only ~1 s of pre-roll is kept while nobody speaks |
 | | `test_chunk_from_other_source_fails_loudly` | A mic chunk can never reach the loopback VAD or the reverse |

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from audio_capture import CHUNK, SAMPLE_RATE, AudioChunk
-from vad import MAX_SEGMENT_S, Segmenter
+from vad import CUT_FRAME, CUT_SEARCH_S, MAX_SEGMENT_S, Segmenter
 
 
 def run(events, n_chunks, source="loopback", t0=1000.0):
@@ -40,16 +40,42 @@ def test_long_speech_is_cut_at_max_length_and_continues():
     segs = run({0: {"start": 0}, n - 1: {"end": end}}, n)
     forced = [s for _, s in segs if s.forced_cut]
     assert len(forced) == 2
-    assert all(len(s.samples) >= max_samples and len(s.samples) < max_samples + CHUNK for s in forced)
+    min_samples = max_samples - CUT_SEARCH_S * SAMPLE_RATE
+    assert all(min_samples <= len(s.samples) < max_samples + CHUNK for s in forced)
     last = segs[-1][1]
     assert not last.forced_cut
     assert sum(len(s.samples) for _, s in segs) == end  # no audio lost or doubled across cuts
 
 
+def test_forced_cut_lands_in_the_quiet_gap_not_mid_word():
+    """Loud speech with one quiet 0.1 s gap at ~4 s: the 5 s cut goes into the gap, the rest starts the next segment."""
+    gap = int(4.0 * SAMPLE_RATE)
+    calls = iter(range(10_000))
+    seg = Segmenter("mic", lambda samples: {"start": 0} if next(calls) == 0 else None)
+    out = []
+    for i in range(int(MAX_SEGMENT_S * SAMPLE_RATE) // CHUNK + 2):
+        pos = np.arange(i * CHUNK, (i + 1) * CHUNK)
+        samples = np.where((pos >= gap) & (pos < gap + 1600), 0.001, 0.5).astype(np.float32)
+        s = seg.feed(AudioChunk("mic", samples, float(i)))
+        if s is not None:
+            out.append(s)
+    assert len(out) == 1 and out[0].forced_cut
+    assert gap <= len(out[0].samples) <= gap + 1600
+    assert np.all(out[0].samples[:gap] == 0.5)
+    assert seg.speech_start == len(out[0].samples)  # next segment continues right after the cut
+
+
 def test_end_right_after_forced_cut_emits_nothing_more():
     cut_chunk = -(-int(MAX_SEGMENT_S * SAMPLE_RATE) // CHUNK) - 1  # first chunk that reaches the max length
-    cut_pos = (cut_chunk + 1) * CHUNK
-    segs = run({0: {"start": 0}, cut_chunk + 1: {"end": cut_pos}}, cut_chunk + 5)
+    # Constant-level audio: every frame ties, so the cut lands in the last 50 ms frame; VAD then ends before it.
+    calls = iter(range(10_000))
+    events = {0: {"start": 0}, cut_chunk + 1: {"end": (cut_chunk + 1) * CHUNK - CUT_FRAME}}
+    seg = Segmenter("loopback", lambda samples: events.get(next(calls)))
+    segs = []
+    for i in range(cut_chunk + 5):
+        s = seg.feed(AudioChunk("loopback", np.full(CHUNK, 0.5, dtype=np.float32), float(i)))
+        if s is not None:
+            segs.append((i, s))
     assert [s.forced_cut for _, s in segs] == [True]
 
 

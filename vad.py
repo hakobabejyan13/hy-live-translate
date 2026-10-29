@@ -2,7 +2,9 @@
 
 Each source gets its own Segmenter, and its own Silero model, because the model keeps state between
 chunks. Segments end at a pause (300 ms of silence) or are cut at MAX_SEGMENT_S so long speech never
-blows the latency budget.
+blows the latency budget. A forced cut is placed at the quietest 50 ms in the last CUT_SEARCH_S of the
+segment (usually a breath or a gap between words), not at the exact 5 s mark, so words are not split;
+the audio after the cut starts the next segment.
 """
 
 import time
@@ -16,6 +18,8 @@ MAX_SEGMENT_S = 5.0
 PRE_ROLL_S = 1.0  # audio kept before speech start so the VAD start index stays reachable
 MIN_SILENCE_MS = 300
 SPEECH_PAD_MS = 100
+CUT_SEARCH_S = 2.0  # a forced cut looks this far back for the quietest point
+CUT_FRAME = 800  # 50 ms at 16 kHz: energy is compared per frame
 
 
 @dataclass
@@ -66,7 +70,7 @@ class Segmenter:
         if event and "end" in event and self.speech_start is not None:
             end = event["end"]
         elif self.speech_start is not None and stream_pos - self.speech_start >= MAX_SEGMENT_S * SAMPLE_RATE:
-            end = stream_pos
+            end = self._quietest_point(stream_pos)
             forced = True
 
         segment = None
@@ -91,3 +95,14 @@ class Segmenter:
             self.buffer = self.buffer[keep_from - self.buffer_start:]
             self.buffer_start = keep_from
         return segment
+
+    def _quietest_point(self, stream_pos):
+        """Stream index at the centre of the lowest-energy frame in the last CUT_SEARCH_S of the buffer."""
+        lo = max(self.speech_start, self.buffer_start, stream_pos - int(CUT_SEARCH_S * SAMPLE_RATE))
+        audio = self.buffer[lo - self.buffer_start:stream_pos - self.buffer_start]
+        n = len(audio) // CUT_FRAME
+        if n == 0:
+            return stream_pos
+        energy = np.square(audio[len(audio) - n * CUT_FRAME:].reshape(n, CUT_FRAME)).mean(axis=1)
+        quietest = int(np.argmin(energy[::-1]))  # ties go to the latest frame, keeping segments long
+        return stream_pos - quietest * CUT_FRAME - CUT_FRAME // 2
