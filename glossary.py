@@ -20,7 +20,7 @@ matches. Edit the file to add your own words; it is read once at startup.
 
 Context rules (third column) are for spellings that are also ordinary Armenian words, like փուլ ("stage", but
 also "pull") or փուշ ("thorn", but also "push"). Such a word is only replaced when one of the `near` words is
-within NEAR_WORDS words of it (git, branch, commit...), or when the very next word is one of the `then` words
+within NEAR_WORDS words of it in the same clause (no comma or full stop in between) (git, branch, commit...), or when the very next word is one of the `then` words
 (արա, անել, արեցի...: "փուլ արա" is "do a pull", never "do a stage"; bare word only, since "փուլը արեցինք"
 is "we did the stage"). Otherwise it is left as Armenian.
 Context words match a whole word or the start of one, so "գիթ" also matches "գիթում".
@@ -43,6 +43,7 @@ WORD = re.compile(r"[Ա-ևﬓ-ﬗ]+")  # a run of Armenian letters
 LATIN = re.compile(r"[A-Za-z]")
 TOKEN = re.compile(r"[\u0531-\u0587\uFB13-\uFB17A-Za-z]+")  # Armenian or Latin word, for context checks
 NEAR_WORDS = 3
+CLAUSE_END = re.compile(r"[,.;:!?\u0589\u055D\u055E\u055C]")  # also Armenian ։ ՝ ՞ ՜: context stops here
 VOWELS = "աեէիոօու"
 
 
@@ -110,6 +111,15 @@ def attach(target, suffix):
     return target + suffix
 
 
+def _clauses(text):
+    """(start, end) spans of text between punctuation; context rules only look inside one span."""
+    pos = 0
+    for m in CLAUSE_END.finditer(text):
+        yield pos, m.start()
+        pos = m.end()
+    yield pos, len(text)
+
+
 class Glossary:
     def __init__(self, table):
         self.table = table
@@ -140,22 +150,23 @@ class Glossary:
         return any(w.startswith(c) for w in around for c in entry.near)
 
     def _sub(self, text, english_only):
-        tokens = list(TOKEN.finditer(text))
-        words = [t.group(0).lower() for t in tokens]
         out, pos = [], 0
-        for i, t in enumerate(tokens):
-            word = t.group(0)
-            hit = self._lookup(word) if WORD.fullmatch(word) else None
-            if hit is None or (english_only and not LATIN.search(hit[0].target)):
-                continue
-            entry, suffix = hit
-            if not self._context_ok(entry, words, i, suffix):
-                continue
-            new = attach(entry.target, suffix) if suffix else entry.target
-            if word[0].isupper() and not LATIN.search(entry.target):
-                new = new[0].upper() + new[1:]  # keep the capital at the start of a sentence
-            out += [text[pos:t.start()], new]
-            pos = t.end()
+        for start, end in _clauses(text):
+            tokens = list(TOKEN.finditer(text, start, end))
+            words = [t.group(0).lower() for t in tokens]
+            for i, t in enumerate(tokens):
+                word = t.group(0)
+                hit = self._lookup(word) if WORD.fullmatch(word) else None
+                if hit is None or (english_only and not LATIN.search(hit[0].target)):
+                    continue
+                entry, suffix = hit
+                if not self._context_ok(entry, words, i, suffix):
+                    continue
+                new = attach(entry.target, suffix) if suffix else entry.target
+                if word[0].isupper() and not LATIN.search(entry.target):
+                    new = new[0].upper() + new[1:]  # keep the capital at the start of a sentence
+                out += [text[pos:t.start()], new]
+                pos = t.end()
         out.append(text[pos:])
         return "".join(out)
 

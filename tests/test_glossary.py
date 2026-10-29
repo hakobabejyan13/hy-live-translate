@@ -81,6 +81,7 @@ def test_shipped_glossary_loads():
     ("Երկրորդ փուլ, երրորդ փուլ։", "Երկրորդ փուլ, երրորդ փուլ։"),  # stage next to stage
     ("Այդ փուլը արեցինք։", "Այդ փուլը արեցինք։"),  # "we did that stage": `then` needs the bare word
     ("Ձեռքս փուշ մտավ։", "Ձեռքս փուշ մտավ։"),  # thorn
+    ("Ձեռքս փուշ մտավ, բայց քոմիթից հետո փուշ արեցի։", "Ձեռքս փուշ մտավ, բայց commit-ից հետո push արեցի։"),  # comma ends context
 ])
 def test_ambiguous_words_follow_context(spoken, shown):
     g = Glossary.from_file()
