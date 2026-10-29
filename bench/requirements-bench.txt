@@ -5,3 +5,4 @@ huggingface_hub
 psutil
 sacrebleu
 pytest
+sounddevice  # record_clips.py

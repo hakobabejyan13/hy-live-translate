@@ -3,7 +3,8 @@
 torch>=2.7
 nemo-toolkit[asr]
 silero-vad
-sounddevice
+soundcard==0.4.6  # WASAPI mic + loopback; pinned: audio_capture.native_format uses its internals
+soxr
 transformers
 sentencepiece
 numpy
