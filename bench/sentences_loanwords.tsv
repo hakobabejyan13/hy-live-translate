@@ -1,0 +1,17 @@
+# Mic test for glossary.tsv: read each sentence once with `python skeleton.py --sources mic`.
+# id<TAB>sentence to read<TAB>what the glossary should produce (English words; Russian words -> Armenian for MT)
+01	Կոդը գրել, վերջացրել եմ, արդեն քոմիթ ու փուշ եմ արել ռիմոթ։	commit, push, remote
+02	Փոփոխություններդ դեռ մի քոմիթ արա, ուղղակի սթեշ արա, հետո կնայենք։	commit, stash
+03	Փուլ արա մեյն բրենչը, հետո մերջ արա։	pull, main, branch, merge
+04	Սերվերի վրա դեփլոյ արեցի, բայց մի բագ կա։	deploy, bug
+05	Ռելիզից առաջ ֆիքսը քոդ ռեվյուի ուղարկիր։	release, fix, review
+06	Վաղը առավոտյան միթինգ ունենք, դեդլայնը ուրբաթ է։	meeting, deadline
+07	Թասքը արդեն արել եմ, ֆիդբեքը իմեյլով կուղարկեմ։	task, feedback, email
+08	Լինկը չաթում գցիր, հետո կոլ կանենք։	link, chat, call
+09	Օքեյ, սորրի, մի քիչ ուշացա, թենքս որ սպասեցիք։	okay, sorry, thanks
+10	Վաբշե մաշինով եկա, կարոչե ուշացա։	ընդհանրապես, մեքենայով, կարճ ասած (MT only)
+11	Կանեշնա, դավայ վաղը կխոսենք, պրոստը հիմա զբաղված եմ։	իհարկե, լավ, ուղղակի (MT only)
+12	Զարյադնիկս մոռացել եմ, տոչնը տանն է մնացել։	լիցքավորիչս, ճիշտ (MT only)
+13	Զարպլատան ուժե եկել է, օտպուսկի եմ գնում։	աշխատավարձը, արդեն, արձակուրդի (MT only)
+14	Առաջին փուլը ավարտեցինք, հետո փուլ արեցի գիթից։	first փուլը stays "stage"; second -> pull (git nearby)
+15	Ձեռքս փուշ մտավ, բայց քոմիթից հետո փուշ արեցի։	first փուշ stays "thorn"; second -> push
