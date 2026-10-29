@@ -17,6 +17,7 @@ import platform
 import queue
 import threading
 import time
+import wave
 from datetime import datetime
 from pathlib import Path
 
@@ -40,11 +41,20 @@ LABEL_WIDTH = len("SPEAKER 10")
 
 LINE_COLUMNS = ["time", "device", "source", "speaker", "spk_sim", "audio_s", "forced_cut", "capture_s", "vad_s",
                 "queue_s", "asr_s", "spk_s", "mt_s", "cli_s", "total_s", "over_budget", "asr_tokens", "avg_logprob",
-                "mt_tokens_in", "mt_tokens_out", "mt_capped", "text_hy", "text_en"]
+                "mt_tokens_in", "mt_tokens_out", "mt_capped", "text_hy", "text_en", "wav"]
 SESSION_COLUMNS = ["run", "sources", "device", "device_name", "threads", "asr_model", "mt_model", "speaker_model",
                    "load_s", "vram_peak_gb", "lines", "lines_mic", "lines_loopback", "speakers", "unknown_speaker",
                    "over_budget", "mt_capped", "total_median_s", "total_p95_s", "total_max_s", "asr_median_s",
                    "spk_median_s", "mt_median_s", "latency_csv"]
+
+
+def save_wav(path, samples):
+    """16-bit 16 kHz mono WAV, for checking speaker labels and cuts after a call."""
+    with wave.open(str(path), "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(SAMPLE_RATE)
+        w.writeframes((np.clip(samples, -1, 1) * 32767).astype("<i2").tobytes())
 
 
 def segment_source(source, chunks, seg_queue, stop):
@@ -108,6 +118,8 @@ def main():
                         help="speaker whose output is captured as loopback, name or part of it (default: system default)")
     parser.add_argument("--list-devices", action="store_true", help="list audio devices and exit")
     parser.add_argument("--device", default="cuda", choices=["cuda", "cpu"])
+    parser.add_argument("--save-audio", action="store_true",
+                        help="save every segment as logs/audio_<run>/<line>_<source>.wav (for tuning speaker labels)")
     parser.add_argument("--threads", type=int, default=DEFAULT_THREADS,
                         help=f"CPU threads for PyTorch (default: {DEFAULT_THREADS}, PyTorch's default here)")
     args = parser.parse_args()
@@ -144,6 +156,9 @@ def main():
     LOG_DIR.mkdir(exist_ok=True)
     run_id = f"{datetime.now():%Y%m%d_%H%M%S}"
     log_path = LOG_DIR / f"latency_{run_id}.csv"
+    audio_dir = LOG_DIR / f"audio_{run_id}"
+    if args.save_audio:
+        audio_dir.mkdir()
     log_file = open(log_path, "w", newline="", encoding="utf-8")
     log = csv.DictWriter(log_file, fieldnames=LINE_COLUMNS)
     log.writeheader()
@@ -181,6 +196,10 @@ def main():
                     f"{indent}en: {en.text_en or '(empty)'}{'  [MT CAPPED]' if en.capped else ''}\n")
             print(line, end="", flush=True)
             t_printed = time.time()
+            wav_name = ""
+            if args.save_audio:  # after t_printed so saving never counts as latency
+                wav_name = f"{len(totals) + 1:03d}_{seg.source}.wav"
+                save_wav(audio_dir / wav_name, seg.samples)
 
             stages = {
                 "capture": seg.t_closing_chunk - seg.t_speech_end,
@@ -203,7 +222,7 @@ def main():
                           "total_s": f"{total:.3f}", "over_budget": over_budget, "asr_tokens": tr.tokens,
                           "avg_logprob": f"{tr.avg_logprob:.3f}", "mt_tokens_in": en.tokens_in,
                           "mt_tokens_out": en.tokens_out, "mt_capped": en.capped,
-                          "text_hy": tr.text_hy, "text_en": en.text_en})
+                          "text_hy": tr.text_hy, "text_en": en.text_en, "wav": wav_name})
             log_file.flush()
             totals.append(total)
             asr_times.append(stages["asr"])

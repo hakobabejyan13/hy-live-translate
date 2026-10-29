@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from speaker import MIN_EMBED_S, SAMPLE_RATE, SpeakerLabeler, SpeakerTracker
+from speaker import MIN_EMBED_S, MIN_NEW_SPEAKER_S, SAMPLE_RATE, SpeakerLabeler, SpeakerTracker
 from vad import Segment
 
 
@@ -39,6 +39,17 @@ def test_short_loopback_segment_is_unknown_without_embedding():
 def test_first_remote_voice_is_speaker_1():
     out = labeler_with([unit(1, 0, 0)]).label(seg("loopback", 2.0))
     assert out.label == "SPEAKER 1" and out.similarity is None
+
+
+def test_short_segment_can_match_but_not_start_a_speaker():
+    short = (MIN_EMBED_S + MIN_NEW_SPEAKER_S) / 2
+    lab = labeler_with([unit(1, 0, 0), unit(1, 0, 0), at_similarity(0.9), unit(0, 1, 0), unit(0, 1, 0)])
+    assert lab.label(seg("loopback", short)).label == "SPEAKER ?"  # nobody known yet, too short to start one
+    assert lab.label(seg("loopback", 3.0)).label == "SPEAKER 1"
+    assert lab.label(seg("loopback", short)).label == "SPEAKER 1"  # short but clearly matches
+    assert lab.label(seg("loopback", short)).label == "SPEAKER ?"  # new voice, too short
+    assert lab.label(seg("loopback", 3.0)).label == "SPEAKER 2"
+    assert lab.speakers == 2
 
 
 def test_match_new_and_uncertain():

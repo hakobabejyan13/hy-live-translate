@@ -33,6 +33,7 @@ Tests use CUDA when PyTorch sees a GPU, otherwise the CPU.
 | `tests/test_speaker.py` (fake embeddings) | `test_mic_is_always_me_without_embedding` | Mic segments are `ME`, no embedding computed |
 | | `test_short_loopback_segment_is_unknown_without_embedding` | Loopback segments under 1 s are `SPEAKER ?` |
 | | `test_first_remote_voice_is_speaker_1` | First remote voice is `SPEAKER 1` |
+| | `test_short_segment_can_match_but_not_start_a_speaker` | Loopback segments of 1-2 s can match a known speaker but never create a new one (unmatched -> `SPEAKER ?`) |
 | | `test_match_new_and_uncertain` | Similarity >= match threshold -> same speaker; < new threshold -> next number; in between -> `SPEAKER ?` |
 | | `test_thresholds_are_inclusive_for_match_only` | Exactly at the match threshold matches; exactly at the new threshold is uncertain |
 | | `test_numbering_follows_first_appearance_and_matches_best_speaker` | Speakers numbered in order of first appearance; a segment goes to the closest speaker |
