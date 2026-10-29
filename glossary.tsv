@@ -1,0 +1,17 @@
+# English jargon said inside Armenian speech -> the Armenian spellings the ASR model writes for it.
+# Format: english<TAB>spelling, spelling   (see glossary.py). Starting guesses: check the text_hy_asr
+# column of logs/latency_<run>.csv for the spellings the model really produces, and add them here.
+# Careful with spellings that are also real Armenian words (փուշ = thorn): they are replaced everywhere.
+commit	քոմիթ, կոմիթ, քոմմիթ, կոմմիթ, քամիթ
+push	փուշ, պուշ
+pull	պուլ  # the model also writes փուլ, but that is a common Armenian word (stage)
+stash	սթեշ, ստեշ, սթաշ, ստաշ
+remote	ռիմոթ, ռիմոտ, ռեմոտ, ռեմոթ, ռիմոութ
+branch	բրենչ, բրանչ
+merge	մերջ, մըրջ
+deploy	դեփլոյ, դիփլոյ, դեպլոյ
+server	սերվեր, սըրվըր
+bug	բագ
+speaker	սփիքեր, սպիկեր, սփիքր, սփիք
+git	գիթ
+meeting	միթինգ

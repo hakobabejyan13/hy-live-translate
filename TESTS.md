@@ -42,6 +42,13 @@ Tests use CUDA when PyTorch sees a GPU, otherwise the CPU.
 | | `test_zero_embedding_and_bad_thresholds_fail_loudly` | All-zero embedding or new threshold above match threshold raise |
 | | `test_titanet_embedding_shape_and_self_similarity` (slow) | Real TitaNet gives a 192-dim embedding; the same clip twice has similarity > 0.99 |
 
+| `tests/test_glossary.py` | `test_hakob_examples` | Hakob's two code-switching sentences come out with `commit`, `push`, `remote`, `stash` in English |
+| | `test_armenian_ending_kept_with_hyphen` | `ռիմոթին` -> `remote-ին`, `քոմիթները` -> `commit-ները` |
+| | `test_case_insensitive_and_whole_words_only` | Capitalised spellings match; a spelling inside a longer Armenian word is left alone |
+| | `test_text_without_jargon_unchanged` | Plain Armenian passes through untouched |
+| | `test_bad_lines_fail_loudly` | Missing tab, a spelling listed for two terms, or a non-Armenian spelling raise at startup |
+| | `test_shipped_glossary_loads` | `glossary.tsv` in the repo is valid |
+
 Not covered by unit tests (needs Windows audio devices): opening the WASAPI mic and loopback in
 `audio_capture.capture()`. Check it live with `python skeleton.py --list-devices`, then a call.
 
