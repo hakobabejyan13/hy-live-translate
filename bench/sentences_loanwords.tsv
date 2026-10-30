@@ -1,18 +1,18 @@
 # Mic test for glossary.tsv: read each sentence aloud the way you normally would, with
 # `python skeleton.py --sources mic`. Compare text_hy_asr / text_hy / text_mt_in in the CSV.
-# id<TAB>sentence to read<TAB>what the glossary should do
-01	Կոդը գրել, վերջացրել եմ, արդեն commit ու push եմ արել remote։	commit, push, remote in English
-02	Փոփոխություններդ դեռ մի commit արա, ուղղակի stash արա, հետո կնայենք։	commit, stash
-03	Pull արա main branch-ը, հետո merge արա։	pull, main, branch, merge
-04	Server-ի վրա deploy արեցի, բայց մի bug կա։	deploy, bug (server-ը is normal Armenian սերվեր)
-05	Release-ից առաջ fix-ը review-ի ուղարկիր։	release, fix, review
-06	Վաղը առավոտյան meeting ունենք, deadline-ը ուրբաթ է։	meeting, deadline
-07	Task-ը արդեն արել եմ, feedback-ը email-ով կուղարկեմ։	task, feedback, email
-08	Link-ը chat-ում գցիր, հետո call կանենք։	link, chat, call
-09	Okay, sorry, մի քիչ ուշացա, thanks որ սպասեցիք։	okay, sorry, thanks
-10	Վաբշե մաշինով եկա, կարոչե ուշացա։	MT gets ընդհանրապես, մեքենայով, կարճ ասած
-11	Կանեշնա, դավայ վաղը կխոսենք, պրոստը հիմա զբաղված եմ։	MT gets իհարկե, լավ, ուղղակի
-12	Զարյադնիկը մոռացել եմ, տոչնը տանն է մնացել։	MT gets լիցքավորիչը, ճիշտ
-13	Զարպլատան ուժե եկել է, օտպուսկի եմ գնում։	MT gets աշխատավարձն, արդեն, արձակուրդի
-14	Առաջին փուլը ավարտեցինք, հետո pull արեցի git-ից։	first փուլը stays "stage"; second -> pull
-15	Ձեռքս փուշ մտավ, բայց commit-ից հետո push արեցի։	first փուշ stays "thorn"; second -> push
+# id<TAB>sentence to read<TAB>what the glossary should do<TAB>words expected in the text sent to MT (bench_boost.py)
+01	Կոդը գրել, վերջացրել եմ, արդեն commit ու push եմ արել remote։	commit, push, remote in English	commit, push, remote
+02	Փոփոխություններդ դեռ մի commit արա, ուղղակի stash արա, հետո կնայենք։	commit, stash	commit, stash
+03	Pull արա main branch-ը, հետո merge արա։	pull, main, branch, merge	pull, main, branch, merge
+04	Server-ի վրա deploy արեցի, բայց մի bug կա։	deploy, bug (server-ը is normal Armenian սերվեր)	deploy, bug
+05	Release-ից առաջ fix-ը review-ի ուղարկիր։	release, fix, review	release, fix, review
+06	Վաղը առավոտյան meeting ունենք, deadline-ը ուրբաթ է։	meeting, deadline	meeting, deadline
+07	Task-ը արդեն արել եմ, feedback-ը email-ով կուղարկեմ։	task, feedback, email	task, feedback, email
+08	Link-ը chat-ում գցիր, հետո call կանենք։	link, chat, call	link, chat, call
+09	Okay, sorry, մի քիչ ուշացա, thanks որ սպասեցիք։	okay, sorry, thanks	okay, sorry, thanks
+10	Վաբշե մաշինով եկա, կարոչե ուշացա։	MT gets ընդհանրապես, մեքենայով, կարճ ասած	ընդհանրապես, մեքենայով, կարճ ասած
+11	Կանեշնա, դավայ վաղը կխոսենք, պրոստը հիմա զբաղված եմ։	MT gets իհարկե, լավ, ուղղակի	իհարկե, լավ, ուղղակի
+12	Զարյադնիկը մոռացել եմ, տոչնը տանն է մնացել։	MT gets լիցքավորիչը, ճիշտ	լիցքավորիչ, ճիշտ
+13	Զարպլատան ուժե եկել է, օտպուսկի եմ գնում։	MT gets աշխատավարձն, արդեն, արձակուրդի	աշխատավարձ, արձակուրդ
+14	Առաջին փուլը ավարտեցինք, հետո pull արեցի git-ից։	first փուլը stays "stage"; second -> pull	pull, git
+15	Ձեռքս փուշ մտավ, բայց commit-ից հետո push արեցի։	first փուշ stays "thorn"; second -> push	commit, push

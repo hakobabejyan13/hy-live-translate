@@ -58,7 +58,9 @@ Tests use CUDA when PyTorch sees a GPU, otherwise the CPU.
 Not covered by unit tests (needs Windows audio devices): opening the WASAPI mic and loopback in
 `audio_capture.capture()`. Check it live with `python skeleton.py --list-devices`, then a call.
 
-Live mic test for the glossary: read `bench/sentences_loanwords.tsv` with `python skeleton.py --sources mic`.
+Live mic test for the glossary: read `bench/sentences_loanwords.tsv` with `python skeleton.py --sources mic --save-audio`,
+then `python bench/bench_boost.py --clips logs/audio_<run>` compares ASR phrase boosting weights on those clips
+(loanwords reaching MT, control WER on `bench/clips/hakob`, ASR time).
 
 Benchmarks (not unit tests, results in `bench/results/`): `bench/bench_asr.py` for ASR WER/CER and speed,
 `bench/bench_mt.py` for translation BLEU/chrF, speed and token counts.
