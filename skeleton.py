@@ -7,7 +7,8 @@ Use headphones: there is no echo handling, so the mic would also pick up the oth
 
 Logs latency at each stage, measured from the end of speech: capture -> VAD -> queue -> ASR -> speaker -> MT -> CLI.
 Every run writes two CSV files in logs/:
-  latency_<run>.csv   one row per printed line: source, speaker, per-stage latency, token counts, device, texts
+  latency_<run>.csv   one row per segment: source, speaker, per-stage latency, token counts, device, texts;
+                      dropped fragments (see short_lines.py) are logged with kind=fragment and nothing printed
   sessions.csv        one row per run, appended: device, load time, peak VRAM, latency median/p95/max
 """
 
@@ -31,8 +32,9 @@ import silero_vad  # noqa: E402, F401  (imported here so its set_num_threads(1) 
 import audio_capture  # noqa: E402
 from asr import ASR_MODEL, DEFAULT_BOOST_ALPHA, Recognizer  # noqa: E402
 from glossary import GLOSSARY_FILE, Glossary  # noqa: E402
+from short_lines import FRAGMENT, REPLY, classify  # noqa: E402
 from speaker import SPEAKER_MODEL, UNKNOWN, Embedder, SpeakerLabeler  # noqa: E402
-from translate import MT_MODEL, Translator  # noqa: E402
+from translate import MT_MODEL, Translation, Translator  # noqa: E402
 from vad import Segmenter, silero_detector  # noqa: E402
 
 SAMPLE_RATE = audio_capture.SAMPLE_RATE
@@ -42,7 +44,7 @@ LABEL_WIDTH = len("SPEAKER 10")
 
 LINE_COLUMNS = ["time", "device", "source", "speaker", "spk_sim", "audio_s", "forced_cut", "capture_s", "vad_s",
                 "queue_s", "asr_s", "spk_s", "mt_s", "cli_s", "total_s", "over_budget", "asr_tokens", "avg_logprob",
-                "mt_tokens_in", "mt_tokens_out", "mt_capped", "text_hy_asr", "text_hy", "text_mt_in", "text_en", "wav"]
+                "mt_tokens_in", "mt_tokens_out", "mt_capped", "text_hy_asr", "text_hy", "text_mt_in", "kind", "text_en", "wav"]
 SESSION_COLUMNS = ["run", "sources", "device", "device_name", "threads", "asr_model", "mt_model", "speaker_model",
                    "load_s", "vram_peak_gb", "lines", "lines_mic", "lines_loopback", "speakers", "unknown_speaker",
                    "over_budget", "mt_capped", "total_median_s", "total_p95_s", "total_max_s", "asr_median_s",
@@ -172,7 +174,7 @@ def main():
     log = csv.DictWriter(log_file, fieldnames=LINE_COLUMNS)
     log.writeheader()
     totals, asr_times, spk_times, mt_times = [], [], [], []
-    counts = {"mic": 0, "loopback": 0, "unknown": 0, "over": 0, "capped": 0}
+    counts = {"mic": 0, "loopback": 0, "unknown": 0, "over": 0, "capped": 0, "fragments": 0}
 
     seg_queue = queue.Queue()
     stop = threading.Event()
@@ -193,10 +195,21 @@ def main():
             t_asr_start = time.time()
             tr = asr.transcribe(seg.samples)
             fixed = glossary.apply(tr.text_hy)
+            kind, reply = classify(fixed.for_mt)
             t_asr_done = time.time()
+            if kind == FRAGMENT:  # half a word: not printed, and not counted in the latency stats
+                log.writerow({"time": datetime.fromtimestamp(seg.t_speech_end).strftime("%H:%M:%S"),
+                              "device": args.device, "source": seg.source,
+                              "audio_s": f"{len(seg.samples) / SAMPLE_RATE:.2f}", "forced_cut": seg.forced_cut,
+                              "asr_s": f"{t_asr_done - t_asr_start:.3f}", "asr_tokens": tr.tokens,
+                              "avg_logprob": f"{tr.avg_logprob:.3f}", "text_hy_asr": tr.text_hy,
+                              "text_hy": fixed.shown, "text_mt_in": fixed.for_mt, "kind": kind})
+                log_file.flush()
+                counts["fragments"] += 1
+                continue
             spk = speakers.label(seg)
             t_spk_done = time.time()
-            en = mt.translate(fixed.for_mt)
+            en = Translation(reply, 0, 0, False) if kind == REPLY else mt.translate(fixed.for_mt)
             t_mt_done = time.time()
 
             stamp = datetime.fromtimestamp(seg.t_speech_end).strftime("%H:%M:%S")
@@ -233,11 +246,12 @@ def main():
                           "avg_logprob": f"{tr.avg_logprob:.3f}", "mt_tokens_in": en.tokens_in,
                           "mt_tokens_out": en.tokens_out, "mt_capped": en.capped,
                           "text_hy_asr": tr.text_hy, "text_hy": fixed.shown, "text_mt_in": fixed.for_mt,
-                          "text_en": en.text_en, "wav": wav_name})
+                          "kind": kind, "text_en": en.text_en, "wav": wav_name})
             log_file.flush()
             totals.append(total)
             asr_times.append(stages["asr"])
-            mt_times.append(stages["mt"])
+            if kind != REPLY:  # a fixed reply never reaches NLLB
+                mt_times.append(stages["mt"])
             if seg.source == "loopback":
                 spk_times.append(stages["spk"])
             counts[seg.source] += 1
@@ -261,6 +275,7 @@ def main():
                         "total_max_s": fmt_stat(totals, max), "asr_median_s": fmt_stat(asr_times, np.median),
                         "spk_median_s": fmt_stat(spk_times, np.median), "mt_median_s": fmt_stat(mt_times, np.median),
                         "latency_csv": log_path.name})
+        print(f"Dropped {counts['fragments']} half-word fragment(s), see kind=fragment in the log.")
         print(f"Latency log: {log_path}\nSession summary appended to {LOG_DIR / 'sessions.csv'}")
 
 

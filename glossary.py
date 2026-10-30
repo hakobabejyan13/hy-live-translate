@@ -25,6 +25,10 @@ within NEAR_WORDS words of it in the same clause (no comma or full stop in betwe
 (արա, անել, արեցի...: "փուլ արա" is "do a pull", never "do a stage"; bare word only, since "փուլը արեցինք"
 is "we did the stage"). Otherwise it is left as Armenian.
 Context words match a whole word or the start of one, so "գիթ" also matches "գիթում".
+
+The ASR often glues the verb "անել" (to do) onto the loanword before it: "review անի" comes out as "ռիվանի",
+"push անենք" as "փուշանենք". A spelling followed by one of VERB_ENDINGS is split back into two words
+("review անի"); for a context-rule spelling the glued verb counts as the `then` word after it.
 """
 
 import re
@@ -35,11 +39,15 @@ GLOSSARY_FILE = Path(__file__).parent / "glossary.tsv"
 
 # Common Armenian case/number/article and verb endings, longest first so "ները" wins over "ը". The possessive
 # endings -ս / -դ are left out: with them պակա (пока) + ս would turn the common word պակաս ("less") into a match.
-SUFFIXES = sorted({"ը", "ն", "ի", "ին", "ից", "ով", "ում", "եր", "երը", "երի", "երով", "ները", "ներ", "ներին",
+SUFFIXES = sorted({"ը", "ն", "ի", "ին", "ից", "ով", "ում", "եր", "երը", "երի", "երով", "ները", "ներ", "ների", "ներին",
                    "ներից", "ներով", "ներում", "ա", "ել", "ենք", "եցի", "եց", "ես", "եմ", "ելու",
                    "ելը", "ած", "եցին", "եցիր", "եք", "են",
                    "յի", "յին", "յից", "յով", "յում"},  # after a vowel: մաշինայի
                   key=len, reverse=True)
+# Forms of անել ("to do") that the ASR glues onto a loanword; only the ան- forms, since արա- endings would also
+# split real words (գիթ + արա = "guitar").
+VERB_ENDINGS = sorted({"անի", "անենք", "անեմ", "անես", "անեք", "անեն", "անել", "անելու", "անում"},
+                      key=len, reverse=True)
 WORD = re.compile(r"[Ա-ևﬓ-ﬗ]+")  # a run of Armenian letters
 LATIN = re.compile(r"[A-Za-z]")
 TOKEN = re.compile(r"[\u0531-\u0587\uFB13-\uFB17A-Za-z]+")  # Armenian or Latin word, for context checks
@@ -134,13 +142,16 @@ class Glossary:
         return cls(load(path))
 
     def _lookup(self, word):
-        """(Entry, matched ending) for a listed word, else None."""
+        """(Entry, matched ending, glued verb) for a listed word, else None."""
         low = word.lower()
         if low in self.table:
-            return self.table[low], ""
+            return self.table[low], "", ""
         for suffix in SUFFIXES:
             if low.endswith(suffix) and low[:-len(suffix)] in self.table:
-                return self.table[low[:-len(suffix)]], word[-len(suffix):]
+                return self.table[low[:-len(suffix)]], word[-len(suffix):], ""
+        for verb in VERB_ENDINGS:
+            if low.endswith(verb) and low[:-len(verb)] in self.table:
+                return self.table[low[:-len(verb)]], "", word[-len(verb):]
         return None
 
     def boost_phrases(self):
@@ -149,9 +160,9 @@ class Glossary:
         return sorted(s for s, e in self.table.items() if e.boost and not e.conditional)
 
     @staticmethod
-    def _context_ok(entry, words, i, suffix):
+    def _context_ok(entry, words, i, suffix, verb):
         """True if the word at index i of `words` (lowercase) has the context its entry needs."""
-        if not entry.conditional:
+        if not entry.conditional or verb.lower() in entry.then:
             return True
         # `then` only for the bare word: "փուլ արա" is a pull, but "փուլը արեցինք" is "we did the stage".
         if not suffix and i + 1 < len(words) and words[i + 1] in entry.then:
@@ -169,10 +180,12 @@ class Glossary:
                 hit = self._lookup(word) if WORD.fullmatch(word) else None
                 if hit is None or (english_only and not LATIN.search(hit[0].target)):
                     continue
-                entry, suffix = hit
-                if not self._context_ok(entry, words, i, suffix):
+                entry, suffix, verb = hit
+                if not self._context_ok(entry, words, i, suffix, verb):
                     continue
                 new = attach(entry.target, suffix) if suffix else entry.target
+                if verb:
+                    new = f"{new} {verb}"
                 if word[0].isupper() and not LATIN.search(entry.target):
                     new = new[0].upper() + new[1:]  # keep the capital at the start of a sentence
                 out += [text[pos:t.start()], new]

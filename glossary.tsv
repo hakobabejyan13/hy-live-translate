@@ -31,7 +31,7 @@ bug	բակ	near=դեպլոյ, դեփլոյ, դեպլոյի, սերվեր, սեռ
 fix	ֆիքս
 release	ռելիզ, ռիլիզ
 build	բիլդ
-review	ռեվյու, ռիվյու, ռեյվ, ռեյվյու
+review	ռեվյու, ռիվյու, ռեյվ, ռեյվյու, ռիվ	# ռիվ seen 2026-10-30 ("review անի" -> ռիվանի)
 request	ռեքվեստ, ռիքվեսթ
 frontend	ֆրոնտենդ, ֆրոնթենդ	# not ֆրոնտ: military front
 backend	բեքենդ, բեքէնդ	# not բեք alone: the model wrote feedback as ֆի֊բեք
@@ -47,6 +47,8 @@ password	փասվորդ, պասվորդ
 link	լինկ
 screenshot	սքրինշոթ, սկրինշոտ, սքրին
 laptop	լեփթոփ, լեպտոպ, նոութ
+Claude	կլոդ, քլոդ	# կլոդ seen 2026-10-30; NLLB turned it into "cloud"
+CSV	սիեսբի, սիեսվի, սիէսվի	# սիեսբի seen 2026-10-30; NLLB turned it into "lesbians"
 speaker	սփիքեր, սպիկեր, սփիքր, սփիք
 
 # --- English: workplace ---

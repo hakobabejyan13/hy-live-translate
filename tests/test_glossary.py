@@ -107,3 +107,15 @@ def test_shipped_boost_list_has_no_ordinary_armenian_words():
     phrases = set(Glossary.from_file().boost_phrases())
     assert "քոմիթ" in phrases
     assert not phrases & {"փուլ", "փուշ", "բակ", "քոլ", "քուլ"}
+
+
+@pytest.mark.parametrize("spoken, shown", [
+    # Seen on the 2026-10-30 Meet call: Hakob said "review անի, pull լինենք ու push անենք".
+    ("Ռիվանի եւ փուշանի մեր ռեպորտո։", "review անի եւ push անի մեր ռեպորտո։"),
+    ("Գիթում փուշանենք։", "git-ում push անենք։"),
+    ("Կառոչե սիեսբիների մեջ։", "Կառոչե CSV-ների մեջ։"),
+    ("Տանք կլոդին։", "Տանք Claude-ին։"),
+    ("Ձեռքս փուշ մտավ։", "Ձեռքս փուշ մտավ։"),  # thorn, no verb glued on
+])
+def test_glued_verb_and_new_spellings(spoken, shown):
+    assert Glossary.from_file().apply(spoken).shown == shown

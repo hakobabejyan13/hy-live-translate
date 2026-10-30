@@ -1,0 +1,38 @@
+"""Very short ASR lines: drop the fragments, translate the common one-word replies without NLLB.
+
+On a Meet call the VAD sometimes closes on half a word ("Հ։", "Հովհ.") just above the vad.SHORT_S limit, and NLLB
+makes a whole sentence out of it ("John: I know."). Common one-word replies ("Այո։", "Լա՞վ։") come out wrong too
+("Yes, you did.", "Is that right?"), because NLLB has no context. So, before translation:
+  fragment  a single word of one letter, or a single word ending in "." (the model writes "։" at the end of a
+            sentence and "." only after a cut-off word) -> not printed, logged with an empty translation.
+  reply     a single word listed in REPLIES -> its English is used as is; a question mark (՞ or ?) is kept.
+Anything else goes to NLLB as usual.
+"""
+
+import re
+
+WORD = re.compile(r"[\u0531-\u0587\uFB13-\uFB17A-Za-z]+")  # also takes ՞ (U+055E) inside a word: Լա՞վ
+QUESTION = "\u055e"
+
+REPLIES = {
+    "այո": "Yes", "հա": "Yeah", "ահա": "Yeah", "ոչ": "No", "չէ": "No", "չե": "No",
+    "լավ": "Okay", "լավը": "Okay", "okay": "Okay", "ok": "Okay",
+    "ապրես": "Thanks", "մերսի": "Thanks", "շնորհակալություն": "Thank you", "բարև": "Hi", "բարեւ": "Hi",
+    "հաջող": "Bye", "իհարկե": "Of course", "ճիշտ": "Right", "ճիշտա": "Right",
+}
+FRAGMENT, REPLY, SENTENCE = "fragment", "reply", "sentence"
+
+
+def classify(text_hy):
+    """(kind, English for a reply or ""). text_hy is the glossary-fixed Armenian line (okay may be in Latin)."""
+    words = WORD.findall(text_hy)
+    if len(words) != 1:
+        return (FRAGMENT, "") if not words else (SENTENCE, "")
+    word = words[0]
+    if len(word.replace(QUESTION, "")) == 1 or text_hy.rstrip().endswith("."):
+        return FRAGMENT, ""
+    key = word.replace(QUESTION, "").lower()
+    if key in REPLIES:
+        question = QUESTION in word or "?" in text_hy
+        return REPLY, REPLIES[key] + ("?" if question else ".")
+    return SENTENCE, ""
