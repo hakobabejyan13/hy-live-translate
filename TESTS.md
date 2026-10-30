@@ -29,6 +29,9 @@ Tests use CUDA when PyTorch sees a GPU, otherwise the CPU.
 | | `test_forced_cut_lands_in_the_quiet_gap_not_mid_word` | A forced cut goes into the quietest 50 ms (a pause between words), and the next segment starts right after it |
 | | `test_end_right_after_forced_cut_emits_nothing_more` | No empty segment after a forced cut |
 | | `test_buffer_does_not_grow_in_silence` | Only ~1 s of pre-roll is kept while nobody speaks |
+| | `test_short_fragment_followed_by_speech_is_joined_to_it` | A fragment under 0.5 s followed by speech within 1 s becomes part of that speech's segment |
+| | `test_short_fragment_with_nothing_after_is_dropped` | A lone fragment under 0.5 s (noise, "Հովհ.") is never sent to ASR/MT and is counted as dropped |
+| | `test_short_tail_after_forced_cut_is_kept` | The short end of a sentence after a 5 s cut is still sent |
 | | `test_chunk_from_other_source_fails_loudly` | A mic chunk can never reach the loopback VAD or the reverse |
 | `tests/test_speaker.py` (fake embeddings) | `test_mic_is_always_me_without_embedding` | Mic segments are `ME`, no embedding computed |
 | | `test_short_loopback_segment_is_unknown_without_embedding` | Loopback segments under 1 s are `SPEAKER ?` |

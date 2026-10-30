@@ -5,6 +5,11 @@ chunks. Segments end at a pause (300 ms of silence) or are cut at MAX_SEGMENT_S 
 blows the latency budget. A forced cut is placed at the quietest 50 ms in the last CUT_SEARCH_S of the
 segment (usually a breath or a gap between words), not at the exact 5 s mark, so words are not split;
 the audio after the cut starts the next segment.
+
+A segment shorter than SHORT_S that ends at a pause is held back instead of sent: if speech starts again
+within HOLD_S it is joined to that speech (gap included), so short Armenian words stay with their sentence;
+if nothing follows, it is dropped. Alone, such fragments are usually a noise, a breath or a cough, and the
+ASR turns them into words ("Հովհ.") that NLLB then translates ("John: I know.").
 """
 
 import time
@@ -20,6 +25,8 @@ MIN_SILENCE_MS = 300
 SPEECH_PAD_MS = 100
 CUT_SEARCH_S = 2.0  # a forced cut looks this far back for the quietest point
 CUT_FRAME = 800  # 50 ms at 16 kHz: energy is compared per frame
+SHORT_S = 0.5  # a segment shorter than this is only kept if more speech follows...
+HOLD_S = 1.0  # ...within this long after it ends
 
 
 @dataclass
@@ -54,6 +61,9 @@ class Segmenter:
         self.buffer = np.zeros(0, dtype=np.float32)
         self.buffer_start = 0  # stream sample index of buffer[0]
         self.speech_start = None  # stream sample index where current speech began
+        self.held = None  # (start, end) of a short segment waiting for more speech, see SHORT_S
+        self.dropped = 0  # short segments dropped because nothing followed
+        self.after_cut = False  # current speech continues a forced cut: its tail is never held or dropped
 
     def feed(self, chunk):
         if chunk.source != self.source:
@@ -64,6 +74,13 @@ class Segmenter:
 
         if event and "start" in event:
             self.speech_start = event["start"]
+            self.after_cut = False
+            if self.held is not None:
+                self.speech_start = self.held[0]  # more speech came: join the held fragment to it
+                self.held = None
+        if self.held is not None and stream_pos - self.held[1] >= HOLD_S * SAMPLE_RATE:
+            self.held = None  # nothing followed: drop it
+            self.dropped += 1
 
         end = None
         forced = False
@@ -77,6 +94,10 @@ class Segmenter:
         if end is not None and end <= self.speech_start:
             # VAD closed the speech right after a forced cut: nothing left to emit.
             self.speech_start = None
+            self.after_cut = False
+        elif end is not None and not forced and not self.after_cut and end - self.speech_start < SHORT_S * SAMPLE_RATE:
+            self.held = (self.speech_start, end)
+            self.speech_start = None
         elif end is not None:
             segment = Segment(
                 source=self.source,
@@ -88,9 +109,15 @@ class Segmenter:
             )
             # A forced cut keeps the VAD in speech state; the next segment starts here.
             self.speech_start = end if forced else None
+            self.after_cut = forced
 
         # Drop audio that can no longer be part of a segment.
-        keep_from = self.speech_start if self.speech_start is not None else stream_pos - int(PRE_ROLL_S * SAMPLE_RATE)
+        if self.speech_start is not None:
+            keep_from = self.speech_start
+        elif self.held is not None:
+            keep_from = self.held[0]
+        else:
+            keep_from = stream_pos - int(PRE_ROLL_S * SAMPLE_RATE)
         if keep_from > self.buffer_start:
             self.buffer = self.buffer[keep_from - self.buffer_start:]
             self.buffer_start = keep_from
