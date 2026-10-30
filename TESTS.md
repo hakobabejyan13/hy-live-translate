@@ -70,4 +70,4 @@ then `python bench/bench_boost.py --clips logs/audio_<run>` compares ASR phrase 
 Benchmarks (not unit tests, results in `bench/results/`): `bench/bench_asr.py` for ASR WER/CER and speed,
 `bench/bench_mt.py` for translation BLEU/chrF, speed and token counts.
 | | `test_glued_verb_and_new_spellings` | `ռիվանի` -> `review անի`, `փուշանենք` -> `push անենք` (the glued verb counts as the `then` word), `CSV-ների`, `Claude-ին`; a bare փուշ stays "thorn" |
-| `tests/test_short_lines.py` | `test_classify` | Half-word lines (`Հովհ.`, `Հ։`, empty) are fragments and never translated; `Այո։` -> `Yes.`, `Լա՞վ։` -> `Okay?` without NLLB; other text goes to NLLB |
+| `tests/test_short_lines.py` | `test_classify` | Half-word lines (`Հովհ.`, `Հ։`, empty) are fragments and never translated; `Այո։` -> `Yes.`, `Լա՞վ։` -> `Okay?`, `Լա՛վ։` -> `Okay.`, `Բապայ։` -> `Bye.` without NLLB; other text goes to NLLB |

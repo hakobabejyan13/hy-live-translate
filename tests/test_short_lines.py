@@ -11,6 +11,8 @@ from short_lines import FRAGMENT, REPLY, SENTENCE, classify
     ("Այո։", (REPLY, "Yes.")),
     ("Լա՞վ։", (REPLY, "Okay?")),
     ("Ոչ։", (REPLY, "No.")),
+    ("Լա՛վ։", (REPLY, "Okay.")),  # stress mark; NLLB gave "I'm not sure."
+    ("Բապայ։", (REPLY, "Bye.")),  # NLLB gave "I'm going to be a little late."
     ("okay։", (REPLY, "Okay.")),
     ("Բալեքս։", (SENTENCE, "")),  # unknown single word: NLLB as usual
     ("֊ Լավ, դու ի՞նչպես ես։", (SENTENCE, "")),

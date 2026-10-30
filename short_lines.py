@@ -13,12 +13,13 @@ import re
 
 WORD = re.compile(r"[\u0531-\u0587\uFB13-\uFB17A-Za-z]+")  # also takes ՞ (U+055E) inside a word: Լա՞վ
 QUESTION = "\u055e"
+MARKS = "\u055b\u055c\u055e"  # ՛ (stress) ՜ (exclamation) ՞ (question), written inside the word: Լա՛վ, Լա՞վ
 
 REPLIES = {
     "այո": "Yes", "հա": "Yeah", "ահա": "Yeah", "ոչ": "No", "չէ": "No", "չե": "No",
     "լավ": "Okay", "լավը": "Okay", "okay": "Okay", "ok": "Okay",
     "ապրես": "Thanks", "մերսի": "Thanks", "շնորհակալություն": "Thank you", "բարև": "Hi", "բարեւ": "Hi",
-    "հաջող": "Bye", "իհարկե": "Of course", "ճիշտ": "Right", "ճիշտա": "Right",
+    "հաջող": "Bye", "բայ": "Bye", "բայբայ": "Bye", "բապայ": "Bye", "իհարկե": "Of course", "ճիշտ": "Right", "ճիշտա": "Right",
 }
 FRAGMENT, REPLY, SENTENCE = "fragment", "reply", "sentence"
 
@@ -29,9 +30,9 @@ def classify(text_hy):
     if len(words) != 1:
         return (FRAGMENT, "") if not words else (SENTENCE, "")
     word = words[0]
-    if len(word.replace(QUESTION, "")) == 1 or text_hy.rstrip().endswith("."):
+    key = word.translate({ord(m): None for m in MARKS}).lower()
+    if len(key) == 1 or text_hy.rstrip().endswith("."):
         return FRAGMENT, ""
-    key = word.replace(QUESTION, "").lower()
     if key in REPLIES:
         question = QUESTION in word or "?" in text_hy
         return REPLY, REPLIES[key] + ("?" if question else ".")
