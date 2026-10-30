@@ -15,6 +15,7 @@ glossary.tsv lists, per word, the Armenian spellings and what to put in their pl
 glossary.tsv format, one word per line (# starts a comment):
     target<TAB>spelling, spelling
     target<TAB>spelling, spelling<TAB>near=word, word; then=word, word
+    target<TAB>spelling<TAB>noboost      (replace, but do not boost the spelling in the ASR)
 Spellings are matched case-insensitively against whole words; a spelling followed by one of SUFFIXES also
 matches. Edit the file to add your own words; it is read once at startup.
 
@@ -52,6 +53,7 @@ class Entry:
     target: str
     near: tuple = ()  # replace only if one of these is within NEAR_WORDS words...
     then: tuple = ()  # ...or the next word is one of these; both empty = always replace
+    boost: bool = True  # also boost this spelling in the ASR (asr.Recognizer.set_boosting)
 
     @property
     def conditional(self):
@@ -88,13 +90,16 @@ def load(path=GLOSSARY_FILE):
 
 
 def parse_context(text, where):
-    """'near=a, b; then=c' -> {"near": ("a", "b"), "then": ("c",)}."""
+    """'near=a, b; then=c; noboost' -> {"near": ("a", "b"), "then": ("c",), "boost": False}."""
     out = {}
     for part in filter(None, (p.strip() for p in text.split(";"))):
+        if part == "noboost":
+            out["boost"] = False
+            continue
         key, _, words = part.partition("=")
         key = key.strip()
         if key not in ("near", "then") or not words.strip():
-            raise ValueError(f"{where}: context must look like 'near=word, word; then=word', got {part!r}")
+            raise ValueError(f"{where}: context must look like 'near=word, word; then=word; noboost', got {part!r}")
         out[key] = tuple(w.strip().lower() for w in words.split(",") if w.strip())
     return out
 
@@ -137,6 +142,11 @@ class Glossary:
             if low.endswith(suffix) and low[:-len(suffix)] in self.table:
                 return self.table[low[:-len(suffix)]], word[-len(suffix):]
         return None
+
+    def boost_phrases(self):
+        """Spellings to boost in the ASR. Not the context-rule ones (փուլ, փուշ...): they are ordinary Armenian
+        words too, and boosting them would push the model toward them everywhere. Not entries marked noboost."""
+        return sorted(s for s, e in self.table.items() if e.boost and not e.conditional)
 
     @staticmethod
     def _context_ok(entry, words, i, suffix):

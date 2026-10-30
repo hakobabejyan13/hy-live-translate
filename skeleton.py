@@ -29,7 +29,7 @@ DEFAULT_THREADS = torch.get_num_threads()  # read before importing silero_vad: i
 import silero_vad  # noqa: E402, F401  (imported here so its set_num_threads(1) runs before ours)
 
 import audio_capture  # noqa: E402
-from asr import ASR_MODEL, Recognizer  # noqa: E402
+from asr import ASR_MODEL, DEFAULT_BOOST_ALPHA, Recognizer  # noqa: E402
 from glossary import GLOSSARY_FILE, Glossary  # noqa: E402
 from speaker import SPEAKER_MODEL, UNKNOWN, Embedder, SpeakerLabeler  # noqa: E402
 from translate import MT_MODEL, Translator  # noqa: E402
@@ -119,6 +119,8 @@ def main():
                         help="speaker whose output is captured as loopback, name or part of it (default: system default)")
     parser.add_argument("--list-devices", action="store_true", help="list audio devices and exit")
     parser.add_argument("--device", default="cuda", choices=["cuda", "cpu"])
+    parser.add_argument("--boost", type=float, default=DEFAULT_BOOST_ALPHA,
+                        help=f"ASR phrase-boosting weight for glossary loanwords (default {DEFAULT_BOOST_ALPHA}; 0 = off)")
     parser.add_argument("--save-audio", action="store_true",
                         help="save every segment as logs/audio_<run>/<line>_<source>.wav (for tuning speaker labels)")
     parser.add_argument("--threads", type=int, default=DEFAULT_THREADS,
@@ -140,6 +142,10 @@ def main():
     print(f"Glossary: {len(glossary.table)} loanword spellings from {GLOSSARY_FILE.name}")
     print(f"Loading ASR model {ASR_MODEL} on {args.device}...")
     asr = Recognizer(args.device)
+    if args.boost > 0:
+        phrases = glossary.boost_phrases()
+        print(f"Boosting {len(phrases)} loanword spellings in the ASR (alpha {args.boost})...")
+        asr.set_boosting(phrases, args.boost)
     print(f"Loading MT model {MT_MODEL} on {args.device}...")
     mt = Translator(args.device)
     embed = None

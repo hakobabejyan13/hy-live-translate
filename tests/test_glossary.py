@@ -93,3 +93,17 @@ def test_bad_context_rule_fails_loudly(tmp_path):
     p.write_text("pull\tփուլ\tclose=գիթ\n", encoding="utf-8")
     with pytest.raises(ValueError, match="context must look like"):
         load(p)
+
+
+def test_boost_phrases_skip_context_and_noboost_spellings(tmp_path):
+    p = tmp_path / "g.tsv"
+    p.write_text("commit\tքոմիթ\npull\tփուլ\tnear=գիթ\ncool\tքուլ\tnoboost\n", encoding="utf-8")
+    g = Glossary.from_file(p)
+    assert g.boost_phrases() == ["քոմիթ"]
+    assert g.apply("քուլ ա").shown == "cool ա"  # noboost still replaces
+
+
+def test_shipped_boost_list_has_no_ordinary_armenian_words():
+    phrases = set(Glossary.from_file().boost_phrases())
+    assert "քոմիթ" in phrases
+    assert not phrases & {"փուլ", "փուշ", "բակ", "քոլ", "քուլ"}

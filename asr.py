@@ -1,7 +1,14 @@
 """Armenian speech recognition with NVIDIA FastConformer (NeMo), RNNT greedy decoding.
 
 Chosen by bench/bench_asr.py: FLEURS hy_am WER 10.6%, about 0.08 s per clip on an RTX 5070 Laptop GPU.
+
+Optional phrase boosting (NeMo GPU-PB boosting tree): the glossary's Armenian spellings of loanwords are boosted
+during greedy decoding, so the model writes "միթինգ" as one word instead of "մի թինգ" and glossary.py can match
+it. bench/bench_boost.py measured it on 11 recorded loanword clips (2026-10-30): loanwords reaching MT 11 -> 18
+at alpha 2.0, plain-Armenian control WER unchanged (0.0%), ASR 0.05 -> 0.11 s per clip.
 """
+
+import copy
 
 from dataclasses import dataclass
 
@@ -19,6 +26,9 @@ class Transcript:
     tokens: int
 
 
+DEFAULT_BOOST_ALPHA = 2.0
+
+
 class Recognizer:
     def __init__(self, device):
         self.model = nemo_asr.models.ASRModel.from_pretrained(ASR_MODEL, map_location=device).to(device).eval()
@@ -26,6 +36,22 @@ class Recognizer:
         # would be raw logits on GPU but log-probs on CPU. Force it so avg_logprob means the same on both.
         # argmax is unchanged, so transcripts are identical.
         self.model.joint.log_softmax = True
+
+    def set_boosting(self, phrases, alpha):
+        """Greedy-batch RNNT decoding, boosting `phrases` (Armenian words) with weight `alpha`; alpha 0 = off."""
+        from omegaconf import OmegaConf, open_dict
+        from nemo.collections.asr.parts.context_biasing.boosting_graph_batched import BoostingTreeModelConfig
+
+        if alpha > 0 and not phrases:
+            raise ValueError("Boosting needs at least one phrase")
+        tree = BoostingTreeModelConfig(key_phrases_list=list(phrases), use_triton=False) if alpha > 0 \
+            else BoostingTreeModelConfig()  # use_triton=False: Triton is usually missing on Windows
+        cfg = copy.deepcopy(self.model.cfg.decoding)
+        with open_dict(cfg):
+            cfg.strategy = "greedy_batch"
+            cfg.greedy.boosting_tree = OmegaConf.structured(tree)
+            cfg.greedy.boosting_tree_alpha = float(alpha)
+        self.model.change_decoding_strategy(cfg, decoder_type="rnnt", verbose=False)
 
     def transcribe(self, samples):
         """samples: 16 kHz mono float32 numpy array."""

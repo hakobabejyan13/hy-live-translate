@@ -2,6 +2,7 @@
 # Format: target<TAB>spelling, spelling[<TAB>near=word, word; then=word, word]
 #   The optional third column is a context rule: the word is only replaced when a `near` word is within 3 words,
 #   or the next word is a `then` word. Use it for spellings that are also ordinary Armenian words (փուլ, փուշ).
+#   `noboost` in the third column keeps a spelling out of ASR phrase boosting (see asr.py).
 #   Latin target   = English word, shown in the Armenian line and sent to NLLB.
 #   Armenian target = plain Armenian equivalent of a Russian word, sent to NLLB only; the screen shows what was said.
 # Spellings are how the ASR model is expected to write the word by sound. Most are educated guesses: check the
@@ -82,7 +83,7 @@ post	փոսթ	# պոստ (with պ, տ) is "guard post"
 story	սթորի, ստորի
 comment	կոմենտ, քոմենթ
 follow	ֆոլոու
-cool	քուլ	# not կուլ: swallow
+cool	քուլ	noboost	# not կուլ: swallow. noboost: boosting turned 'քոլ կանենք' (call) into քուլ
 cringe	քրինջ, կրինջ
 vibe	վայբ
 fake	ֆեյք

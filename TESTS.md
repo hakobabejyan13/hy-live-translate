@@ -53,6 +53,8 @@ Tests use CUDA when PyTorch sees a GPU, otherwise the CPU.
 | | `test_shipped_glossary_loads` | `glossary.tsv` in the repo is valid; փուլ and փուշ have context rules |
 | | `test_ambiguous_words_follow_context` (8 cases) | փուլ/փուշ become pull/push next to git words (գիթ, branch, commit, remote...) or before արա/արեցի; stay Armenian as "stage"/"thorn" otherwise, including "Այդ փուլը արեցինք" |
 | | `test_ambiguous_words_follow_context` also covers | A comma ends the context: in "Ձեռքս փուշ մտավ, բայց քոմիթից հետո փուշ արեցի" only the second փուշ becomes push |
+| | `test_boost_phrases_skip_context_and_noboost_spellings` | ASR boost list leaves out context-rule and `noboost` spellings, which still get replaced |
+| | `test_shipped_boost_list_has_no_ordinary_armenian_words` | փուլ, փուշ, բակ, քոլ, քուլ are never boosted |
 | | `test_bad_context_rule_fails_loudly` | A malformed context column raises at startup |
 
 Not covered by unit tests (needs Windows audio devices): opening the WASAPI mic and loopback in

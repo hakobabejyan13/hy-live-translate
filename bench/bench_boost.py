@@ -5,8 +5,8 @@ once per boosting weight, with the glossary's Armenian spellings as boosted phra
 nemo.collections.asr.parts.context_biasing). Then runs glossary.py on every transcript and counts how many of
 the expected words from sentences_loanwords.tsv reach the text sent to MT.
 
-A control set checks that boosting does not hurt plain Armenian: WER on bench/clips/hakob (sentences_hakob.tsv),
-skipped if those clips are not recorded.
+Control sets check that boosting does not hurt plain Armenian: WER on bench/clips/hakob (sentences_hakob.tsv,
+skipped if not recorded) and, with --fleurs N, on the first N FLEURS hy_am test clips.
 
 Usage (from the repo root, after `python skeleton.py --sources mic --save-audio` while reading
 bench/sentences_loanwords.tsv):
@@ -15,7 +15,6 @@ Results: printed table + bench/results/boost_<run>.csv (every transcript, per we
 """
 
 import argparse
-import copy
 import csv
 import sys
 import time
@@ -31,36 +30,11 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "bench"))
 
 from asr import Recognizer  # noqa: E402
-from bench_asr import edit_distance, normalize  # noqa: E402
+from bench_asr import edit_distance, fleurs_clips, normalize  # noqa: E402
 from glossary import Glossary  # noqa: E402
 
 HERE = Path(__file__).parent
 SAMPLE_RATE = 16000
-
-
-def boost_phrases(glossary):
-    """Armenian spellings to boost: every unconditional glossary spelling. Context-rule spellings (փուլ, փուշ,
-    բակ, քոլ) are ordinary Armenian words too, so boosting them would push the model toward them everywhere."""
-    return sorted(s for s, e in glossary.table.items() if not e.conditional)
-
-
-def set_boosting(model, phrases, alpha):
-    """Switch the RNNT decoder to greedy_batch with (alpha > 0) or without the boosting tree."""
-    from omegaconf import OmegaConf, open_dict
-    from nemo.collections.asr.parts.context_biasing.boosting_graph_batched import BoostingTreeModelConfig
-
-    cfg = copy.deepcopy(model.cfg.decoding)
-    with open_dict(cfg):
-        cfg.strategy = "greedy_batch"
-        if alpha > 0:
-            # use_triton=False: Triton is usually missing on Windows, and forcing it would crash.
-            cfg.greedy.boosting_tree = OmegaConf.structured(
-                BoostingTreeModelConfig(key_phrases_list=phrases, use_triton=False))
-            cfg.greedy.boosting_tree_alpha = alpha
-        else:
-            cfg.greedy.boosting_tree = OmegaConf.structured(BoostingTreeModelConfig())
-            cfg.greedy.boosting_tree_alpha = 0.0
-    model.change_decoding_strategy(cfg, decoder_type="rnnt", verbose=False)
 
 
 def load_wav(path):
@@ -90,6 +64,7 @@ def main():
     parser.add_argument("--clips", required=True, type=Path, help="folder from skeleton.py --save-audio")
     parser.add_argument("--alphas", type=float, nargs="+", default=[0.0, 0.5, 1.0, 2.0],
                         help="boosting weights to try; 0 = no boosting (default: 0 0.5 1 2)")
+    parser.add_argument("--fleurs", type=int, default=0, help="also check WER on the first N FLEURS hy_am test clips")
     parser.add_argument("--device", default="cuda", choices=["cuda", "cpu"])
     args = parser.parse_args()
 
@@ -104,9 +79,11 @@ def main():
             path = HERE / "clips" / "hakob" / f"{cid}.wav"
             if path.exists():
                 control.append((path, ref))
+    if args.fleurs:
+        control += [(path, ref) for _, path, ref in fleurs_clips(args.fleurs)]
 
     glossary = Glossary.from_file()
-    phrases = boost_phrases(glossary)
+    phrases = glossary.boost_phrases()
     expected = expected_words()
     print(f"{len(clips)} loanword clips, {len(control)} control clips, {len(phrases)} boosted phrases, "
           f"{sum(expected.values())} expected loanwords")
@@ -116,7 +93,7 @@ def main():
     out_path = HERE / "results" / f"boost_{run_id}.csv"
     rows, summary = [], []
     for alpha in args.alphas:
-        set_boosting(asr.model, phrases, alpha)
+        asr.set_boosting(phrases, alpha)
         asr.warmup()
         texts, times = [], []
         for path in clips:
