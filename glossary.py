@@ -50,9 +50,10 @@ SUFFIXES = sorted({"ը", "ն", "ի", "ին", "ից", "ով", "ում", "եր", "
                    "ելը", "ած", "եցին", "եցիր", "եք", "են",
                    "յի", "յին", "յից", "յով", "յում"},  # after a vowel: մաշինայի
                   key=len, reverse=True)
-# Forms of անել ("to do") that the ASR glues onto a loanword; only the ան- forms, since արա- endings would also
+# Forms of անել ("to do") that the ASR glues onto a loanword; only the ան- and կան- forms, since արա- endings would also
 # split real words (գիթ + արա = "guitar").
-VERB_ENDINGS = sorted({"անի", "անենք", "անեմ", "անես", "անեք", "անեն", "անել", "անելու", "անում"},
+VERB_ENDINGS = sorted({"անի", "անենք", "անեմ", "անես", "անեք", "անեն", "անել", "անելու", "անում",
+                       "կանի", "կանենք", "կանեմ", "կանես", "կանեք", "կանեն"},  # future: "transcription կանի"
                       key=len, reverse=True)
 WORD = re.compile(r"[Ա-ևﬓ-ﬗ]+")  # a run of Armenian letters
 LATIN = re.compile(r"[A-Za-z]")

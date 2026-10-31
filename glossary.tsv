@@ -80,6 +80,7 @@ live	լայվ	# "էս լայվը" became "I'm a slug"
 site	սայտ	# "միաց սայտ" became "join the stick"
 Google	գուգլ, գուգըլ
 transcription	տրանսկրիպցիա, տրանսկրիպշն, տրանսքրիփշն
+transcription	տրանսսկիա, տրանսկիպսիա, տրանսկրիպսիա	noboost	# seen 2026-10-31: "Տրանսսկիականի" = transcription կանի
 
 # --- Names: the screen keeps Armenian, NLLB gets the Latin spelling ---
 Hakob	հակոբ	mtonly; noboost	# NLLB turned Հակոբ into "Jacob" (2026-10-31)
@@ -90,6 +91,7 @@ call	կոլ
 call	քոլ	then=կանենք, անենք, անեմ, կանեմ, արա, արեք, արեցի, ունենք, ունեմ	# seen 2026-10-30; քոլ is also "bush"
 deadline	դեդլայն, դեդլաին, դեյլայն
 task	թասք, տասկ, ըասք
+task	թաս, թաաս	noboost	# seen 2026-10-31 ("Թասը պետք է սարքվի", "Թաասի միտք"); also "bowl", but rare in a work call
 feedback	ֆիդբեք, ֆիդբեկ
 report	ռեփորթ, ռեպորտ
 manager	մենեջեր, մենեջր

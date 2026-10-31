@@ -214,7 +214,7 @@ def main():
 
             stamp = datetime.fromtimestamp(seg.t_speech_end).strftime("%H:%M:%S")
             indent = " " * (len("[00:00:00] ") + LABEL_WIDTH + 1)
-            cut = "  [cut at 5s]" if seg.forced_cut else ""
+            cut = "  [cut]" if seg.forced_cut else ""
             line = (f"[{stamp}] {spk.label:<{LABEL_WIDTH}} hy: {fixed.shown or '(empty)'}{cut}\n"
                     f"{indent}en: {en.text_en or '(empty)'}{'  [MT CAPPED]' if en.capped else ''}\n")
             print(line, end="", flush=True)

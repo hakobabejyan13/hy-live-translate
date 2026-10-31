@@ -1,10 +1,16 @@
 """Voice activity detection: cut one source's 16 kHz chunk stream into speech segments with Silero VAD.
 
 Each source gets its own Segmenter, and its own Silero model, because the model keeps state between
-chunks. Segments end at a pause (300 ms of silence) or are cut at MAX_SEGMENT_S so long speech never
-blows the latency budget. A forced cut is placed at the quietest 50 ms in the last CUT_SEARCH_S of the
-segment (usually a breath or a gap between words), not at the exact 5 s mark, so words are not split;
-the audio after the cut starts the next segment.
+chunks. Segments end at a pause (300 ms of silence). Long speech without such a pause is cut so it never
+blows the latency budget, and the cut must not split a word:
+  - From MAX_SEGMENT_S on, every chunk looks in the last CUT_SEARCH_S for a short pause between words: at
+    least PAUSE_S of 10 ms frames that are all quiet (energy under PAUSE_RATIO of the median frame there).
+    The cut goes in the middle of the longest such run. The old rule, the single quietest 50 ms, often
+    picked the closure of a stop consonant inside a word, which is how "հանդիպման" became "հանդիպ" + "ման"
+    on 2026-10-31.
+  - No pause yet: keep listening, up to HARD_MAX_S. Then cut in the longest quiet run there is.
+The search never looks further back than CUT_SEARCH_S, so the cut is at most that long before the newest
+audio and the 5 s end-of-speech budget holds. The audio after the cut starts the next segment.
 
 A segment shorter than SHORT_S that ends at a pause is held back instead of sent: if speech starts again
 within HOLD_S it is joined to that speech (gap included), so short Armenian words stay with their sentence;
@@ -19,12 +25,15 @@ import numpy as np
 
 from audio_capture import SAMPLE_RATE
 
-MAX_SEGMENT_S = 5.0
+MAX_SEGMENT_S = 5.0  # from here on, cut at the next short pause between words...
+HARD_MAX_S = 7.0  # ...or here at the quietest point if the speaker never pauses
 PRE_ROLL_S = 1.0  # audio kept before speech start so the VAD start index stays reachable
 MIN_SILENCE_MS = 300
 SPEECH_PAD_MS = 100
-CUT_SEARCH_S = 2.0  # a forced cut looks this far back for the quietest point
-CUT_FRAME = 800  # 50 ms at 16 kHz: energy is compared per frame
+CUT_SEARCH_S = 2.0  # a forced cut looks this far back for a pause
+CUT_FRAME = 160  # 10 ms at 16 kHz: energy is measured per frame
+PAUSE_S = 0.15  # this long all quiet = a gap between words (stop consonant closures are about 30-100 ms)
+PAUSE_RATIO = 0.1  # a frame is quiet under this share of the median frame energy in the search area
 SHORT_S = 0.5  # a segment shorter than this is only kept if more speech follows...
 HOLD_S = 1.0  # ...within this long after it ends
 
@@ -36,7 +45,7 @@ class Segment:
     t_speech_end: float  # wall time of the last speech sample
     t_closing_chunk: float  # wall time the chunk that closed the segment was captured
     t_vad_done: float
-    forced_cut: bool  # True when cut at MAX_SEGMENT_S instead of at a pause
+    forced_cut: bool  # True when cut because speech ran past MAX_SEGMENT_S, not at a 300 ms pause
 
 
 def silero_detector():
@@ -87,8 +96,8 @@ class Segmenter:
         if event and "end" in event and self.speech_start is not None:
             end = event["end"]
         elif self.speech_start is not None and stream_pos - self.speech_start >= MAX_SEGMENT_S * SAMPLE_RATE:
-            end = self._quietest_point(stream_pos)
-            forced = True
+            end = self._cut_point(stream_pos, hard=stream_pos - self.speech_start >= HARD_MAX_S * SAMPLE_RATE)
+            forced = end is not None
 
         segment = None
         if end is not None and end <= self.speech_start:
@@ -123,13 +132,28 @@ class Segmenter:
             self.buffer_start = keep_from
         return segment
 
-    def _quietest_point(self, stream_pos):
-        """Stream index at the centre of the lowest-energy frame in the last CUT_SEARCH_S of the buffer."""
+    def _cut_point(self, stream_pos, hard):
+        """Stream index for a forced cut, or None to keep listening.
+
+        Looks at the last CUT_SEARCH_S in 10 ms frames. A frame is quiet when its energy is under PAUSE_RATIO
+        of the median frame there. The cut goes in the middle of the longest run of quiet frames, if that run
+        lasts PAUSE_S (a gap between words, not the closure of a consonant). With `hard`, the longest quiet run
+        is taken however short, or the quietest frame if there is none. Ties go to the latest, keeping
+        segments long."""
         lo = max(self.speech_start, self.buffer_start, stream_pos - int(CUT_SEARCH_S * SAMPLE_RATE))
         audio = self.buffer[lo - self.buffer_start:stream_pos - self.buffer_start]
         n = len(audio) // CUT_FRAME
         if n == 0:
-            return stream_pos
+            return stream_pos if hard else None
         energy = np.square(audio[len(audio) - n * CUT_FRAME:].reshape(n, CUT_FRAME)).mean(axis=1)
-        quietest = int(np.argmin(energy[::-1]))  # ties go to the latest frame, keeping segments long
-        return stream_pos - quietest * CUT_FRAME - CUT_FRAME // 2
+        quiet = energy <= PAUSE_RATIO * np.median(energy)
+        best_len, best_end, run = 0, 0, 0  # best_end: frame index just after the longest quiet run
+        for k, q in enumerate(quiet):
+            run = run + 1 if q else 0
+            if run and run >= best_len:
+                best_len, best_end = run, k + 1
+        if best_len * CUT_FRAME < PAUSE_S * SAMPLE_RATE and not hard:
+            return None
+        if best_len == 0:  # hard limit, nothing quiet at all: the quietest frame
+            best_len, best_end = 1, n - int(np.argmin(energy[::-1]))
+        return stream_pos - (n - best_end) * CUT_FRAME - best_len * CUT_FRAME // 2

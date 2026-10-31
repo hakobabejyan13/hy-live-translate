@@ -36,7 +36,7 @@ loopback ─► capture ─► VAD ─┘
 | Stage | What it does | File |
 |---|---|---|
 | Audio capture | Opens the mic and a WASAPI loopback of the speakers with `soundcard`, at the device's native format, then downmixes to mono and resamples to 16 kHz | `audio_capture.py` |
-| VAD | Silero VAD cuts each source into speech segments. A segment ends after 300 ms of silence or is cut at 5 s, at the quietest point of its last 2 s. Fragments under 0.5 s are joined to the speech that follows, or dropped | `vad.py` |
+| VAD | Silero VAD cuts each source into speech segments. A segment ends after 300 ms of silence. Longer speech is cut from 5 s on at the first short pause between words (150 ms), so words are not split, or at 7 s if the speaker never pauses. Fragments under 0.5 s are joined to the speech that follows, or dropped | `vad.py` |
 | ASR | NVIDIA FastConformer for Armenian (`nvidia/stt_hy_fastconformer_hybrid_large_pc`, NeMo), with phrase boosting for loanwords | `asr.py` |
 | Glossary | Turns English and Russian loanwords that the ASR wrote in Armenian script (`քոմիթ`, `փուշ արա`) into `commit`, `push`, and so on, keeping Armenian endings (`commit-ները`) | `glossary.py`, `glossary.tsv` |
 | Short lines | Drops half-word fragments (`Հովհ.`) and answers one-word replies (`Այո` -> `Yes.`) without the translation model | `short_lines.py` |
@@ -142,8 +142,8 @@ translation (`en:`) and how long each stage took.
 
 Flags that can appear on a line:
 
-- `[cut at 5s]`: the person kept talking for 5 s without a pause, so the segment was cut there and
-  the rest follows on the next line.
+- `[cut]`: the person kept talking for over 5 s without a 300 ms pause, so the segment was cut at
+  the next short gap between words (or at 7 s if there was none) and the rest follows on the next line.
 - `[MT CAPPED]`: the translation hit its length limit (2 x input tokens + 16), which usually means
   the model started repeating itself.
 - `OVER 5s BUDGET`: the line took longer than the 5 s limit from end of speech to screen.

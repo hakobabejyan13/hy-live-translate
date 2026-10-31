@@ -152,7 +152,7 @@ def test_mtonly_name_keeps_armenian_on_screen(tmp_path):
 @pytest.mark.parametrize("spoken, for_mt", [
     # Lines from the 2026-10-31 Meet call, as the ASR wrote them.
     ("Թասը պետք է սարքվի, որ ծելեգրամոգոտը լինի պլիզ միաց սայտ։",
-     "Թասը պետք է սարքվի, որ Telegram bot-ը լինի please միաց site։"),
+     "task-ը պետք է սարքվի, որ Telegram bot-ը լինի please միաց site։"),
     ("Ծերամ է աուտենտի ֆիկացիա եւ տենց։", "Telegram է authentication եւ տենց։"),
     ("Բան չկար ռեքուորմենտի մեջ։", "Բան չկար requirements-ի մեջ։"),
     ("Մի հատ չոգեմ, բագ չ տերմալ ոնց կհասնեն, տերմալոգեն հիմնականում քիթհաբին։",
@@ -162,6 +162,9 @@ def test_mtonly_name_keeps_armenian_on_screen(tmp_path):
     ("Կարողանք լոգալ պրոցեսին ավելի ուժեղ մոդել օգտագործենք։",
      "Կարողանք local պրոցեսին ավելի ուժեղ մոդել օգտագործենք։"),
     ("Տերմալ ջրերում լողացինք։", "Տերմալ ջրերում լողացինք։"),  # thermal waters: no tech word nearby
+    ("Թասը պետք է սարքվի։", "task-ը պետք է սարքվի։"),
+    ("Թաասի միտքն էր։", "task-ի միտքն էր։"),
+    ("Տրանսսկիականի։", "transcription կանի։"),
 ])
 def test_meet_call_2026_10_31(spoken, for_mt):
     assert Glossary.from_file().apply(spoken).for_mt == for_mt

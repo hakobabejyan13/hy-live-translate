@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from audio_capture import CHUNK, SAMPLE_RATE, AudioChunk
-from vad import CUT_FRAME, CUT_SEARCH_S, MAX_SEGMENT_S, Segmenter
+from vad import CUT_SEARCH_S, HARD_MAX_S, MAX_SEGMENT_S, PAUSE_S, Segmenter
 
 
 def run(events, n_chunks, source="loopback", t0=1000.0):
@@ -33,43 +33,85 @@ def test_segment_cut_at_pause_has_exact_samples_and_times():
     assert s.t_speech_end == pytest.approx(1000.0 + end / SAMPLE_RATE)
 
 
-def test_long_speech_is_cut_at_max_length_and_continues():
-    max_samples = int(MAX_SEGMENT_S * SAMPLE_RATE)
-    n = 2 * max_samples // CHUNK + 20
+def test_long_speech_without_pauses_is_cut_at_hard_max_and_continues():
+    hard = int(HARD_MAX_S * SAMPLE_RATE)
+    n = 2 * hard // CHUNK + 20
     end = (n - 2) * CHUNK
-    segs = run({0: {"start": 0}, n - 1: {"end": end}}, n)
+    segs = run({0: {"start": 0}, n - 1: {"end": end}}, n)  # rising level: never a pause
     forced = [s for _, s in segs if s.forced_cut]
     assert len(forced) == 2
-    min_samples = max_samples - CUT_SEARCH_S * SAMPLE_RATE
-    assert all(min_samples <= len(s.samples) < max_samples + CHUNK for s in forced)
+    min_samples = hard - CUT_SEARCH_S * SAMPLE_RATE
+    assert all(min_samples <= len(s.samples) < hard + CHUNK for s in forced)
     last = segs[-1][1]
     assert not last.forced_cut
     assert sum(len(s.samples) for _, s in segs) == end  # no audio lost or doubled across cuts
 
 
-def test_forced_cut_lands_in_the_quiet_gap_not_mid_word():
-    """Loud speech with one quiet 0.1 s gap at ~4 s: the 5 s cut goes into the gap, the rest starts the next segment."""
-    gap = int(4.0 * SAMPLE_RATE)
-    calls = iter(range(10_000))
+def speech_with_quiet(quiet, n_chunks):
+    """Loud speech from the stream start, quiet (0.001) in the [start, end) sample ranges of `quiet`.
+    Returns [(chunk index, Segment)] and the Segmenter."""
+    calls = iter(range(100_000))
     seg = Segmenter("mic", lambda samples: {"start": 0} if next(calls) == 0 else None)
     out = []
-    for i in range(int(MAX_SEGMENT_S * SAMPLE_RATE) // CHUNK + 2):
+    for i in range(n_chunks):
         pos = np.arange(i * CHUNK, (i + 1) * CHUNK)
-        samples = np.where((pos >= gap) & (pos < gap + 1600), 0.001, 0.5).astype(np.float32)
-        s = seg.feed(AudioChunk("mic", samples, float(i)))
+        quiet_here = np.zeros(CHUNK, dtype=bool)
+        for a, b in quiet:
+            quiet_here |= (pos >= a) & (pos < b)
+        s = seg.feed(AudioChunk("mic", np.where(quiet_here, 0.001, 0.5).astype(np.float32), float(i)))
         if s is not None:
-            out.append(s)
-    assert len(out) == 1 and out[0].forced_cut
-    assert gap <= len(out[0].samples) <= gap + 1600
-    assert np.all(out[0].samples[:gap] == 0.5)
-    assert seg.speech_start == len(out[0].samples)  # next segment continues right after the cut
+            out.append((i, s))
+    return out, seg
+
+
+def chunk_at(seconds):
+    return int(seconds * SAMPLE_RATE) // CHUNK
+
+
+def test_forced_cut_lands_in_the_pause_between_words():
+    """A 0.2 s gap at 4 s: at 5 s the cut goes into the gap, the rest starts the next segment."""
+    gap = int(4.0 * SAMPLE_RATE)
+    out, seg = speech_with_quiet([(gap, gap + 3200)], chunk_at(MAX_SEGMENT_S) + 2)
+    assert len(out) == 1 and out[0][1].forced_cut
+    s = out[0][1]
+    assert gap <= len(s.samples) <= gap + 3200
+    assert np.all(s.samples[:gap] == 0.5)
+    assert seg.speech_start == len(s.samples)  # next segment continues right after the cut
+
+
+def test_consonant_closure_is_not_a_cut_point():
+    """The 2026-10-31 split "հանդիպ|ման": a 60 ms closure inside a word at 4 s is skipped; the segment waits
+    for the 0.2 s pause at 5.6 s and is cut there."""
+    closure, pause = int(4.0 * SAMPLE_RATE), int(5.6 * SAMPLE_RATE)
+    out, _ = speech_with_quiet([(closure, closure + 960), (pause, pause + 3200)], chunk_at(HARD_MAX_S) + 2)
+    assert len(out) == 1
+    i, s = out[0]
+    assert s.forced_cut and pause <= len(s.samples) <= pause + 3200
+    assert i < chunk_at(6.0)  # cut as soon as the pause is heard, not at the hard limit
+
+
+def test_no_pause_means_cut_at_hard_max_in_the_quietest_spot():
+    closure = int(5.5 * SAMPLE_RATE)
+    out, _ = speech_with_quiet([(closure, closure + 960)], chunk_at(HARD_MAX_S) + 2)
+    assert len(out) == 1
+    i, s = out[0]
+    assert s.forced_cut and i == -(-int(HARD_MAX_S * SAMPLE_RATE) // CHUNK) - 1  # first chunk at the hard limit
+    assert closure <= len(s.samples) <= closure + 960 + int(PAUSE_S * SAMPLE_RATE)
+
+
+def test_cut_stays_within_the_latency_budget():
+    """Even waiting for a pause, the cut is never more than CUT_SEARCH_S behind the newest audio."""
+    for quiet in ([], [(int(3.2 * SAMPLE_RATE), int(3.5 * SAMPLE_RATE))]):
+        out, _ = speech_with_quiet(quiet, chunk_at(HARD_MAX_S) + 2)
+        for i, s in out:
+            assert (i + 1) * CHUNK - len(s.samples) <= CUT_SEARCH_S * SAMPLE_RATE
 
 
 def test_end_right_after_forced_cut_emits_nothing_more():
-    cut_chunk = -(-int(MAX_SEGMENT_S * SAMPLE_RATE) // CHUNK) - 1  # first chunk that reaches the max length
-    # Constant-level audio: every frame ties, so the cut lands in the last 50 ms frame; VAD then ends before it.
+    cut_chunk = -(-int(HARD_MAX_S * SAMPLE_RATE) // CHUNK) - 1  # first chunk that reaches the hard limit
+    # Constant-level audio: no pause, every window ties, so the cut lands in the last window; VAD then ends before it.
     calls = iter(range(10_000))
-    events = {0: {"start": 0}, cut_chunk + 1: {"end": (cut_chunk + 1) * CHUNK - CUT_FRAME}}
+    events = {0: {"start": 0}, cut_chunk + 1: {"end": (cut_chunk + 1) * CHUNK - int(PAUSE_S * SAMPLE_RATE)}}
     seg = Segmenter("loopback", lambda samples: events.get(next(calls)))
     segs = []
     for i in range(cut_chunk + 5):
@@ -113,8 +155,8 @@ def test_short_fragment_with_nothing_after_is_dropped():
 
 
 def test_short_tail_after_forced_cut_is_kept():
-    cut_chunk = -(-int(MAX_SEGMENT_S * SAMPLE_RATE) // CHUNK) - 1
-    end = (cut_chunk + 1) * CHUNK + int(0.2 * SAMPLE_RATE)  # speech ends 0.2 s after the max length
+    cut_chunk = -(-int(HARD_MAX_S * SAMPLE_RATE) // CHUNK) - 1
+    end = (cut_chunk + 1) * CHUNK + int(0.2 * SAMPLE_RATE)  # speech ends 0.2 s after the hard limit
     calls = iter(range(10_000))
     events = {0: {"start": 0}, cut_chunk + 8: {"end": end}}
     seg = Segmenter("loopback", lambda samples: events.get(next(calls)))
