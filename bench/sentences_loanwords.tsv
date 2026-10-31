@@ -16,3 +16,8 @@
 13	Զարպլատան ուժե եկել է, օտպուսկի եմ գնում։	MT gets աշխատավարձն, արդեն, արձակուրդի	աշխատավարձ, արձակուրդ
 14	Առաջին փուլը ավարտեցինք, հետո pull արեցի git-ից։	first փուլը stays "stage"; second -> pull	pull, git
 15	Ձեռքս փուշ մտավ, բայց commit-ից հետո push արեցի։	first փուշ stays "thorn"; second -> push	commit, push
+16	Telegram bot-ը պետք է սարքվի, որ site-ին միանա։	Telegram bot, site	telegram bot, site
+17	Telegram authentication չկար requirements-ի մեջ։	Telegram, authentication, requirements	telegram, authentication, requirements
+18	Terminal-ը բացիր, GitHub-ից pull արա։	terminal, GitHub, pull	terminal, github, pull
+19	Local մոդելը browser-ում չի աշխատում։	local, browser	local, browser
+20	Մի միլիարդ parameter-ով մոդել է, live-ը terminal-ում ես տեսնում։	parameter, live, terminal	parameter, live, terminal

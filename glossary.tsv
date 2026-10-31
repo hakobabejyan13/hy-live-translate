@@ -3,6 +3,8 @@
 #   The optional third column is a context rule: the word is only replaced when a `near` word is within 3 words,
 #   or the next word is a `then` word. Use it for spellings that are also ordinary Armenian words (փուլ, փուշ).
 #   `noboost` in the third column keeps a spelling out of ASR phrase boosting (see asr.py).
+#   `mtonly` sends the Latin target to NLLB only and keeps the Armenian word on screen (names).
+#   A spelling may be several words when the ASR splits a loanword ("աուտենտի ֆիկացիա"); it is joined back first.
 #   Latin target   = English word, shown in the Armenian line and sent to NLLB.
 #   Armenian target = plain Armenian equivalent of a Russian word, sent to NLLB only; the screen shows what was said.
 # Spellings are how the ASR model is expected to write the word by sound. Most are educated guesses: check the
@@ -14,10 +16,10 @@
 # --- English: software and git (Hakob's examples) ---
 commit	քոմիթ, կոմիթ, քոմմիթ, կոմմիթ, քամիթ, քոմիտ	# քոմիտ seen 2026-10-30. Not կոմիտ: the model writes կոմիտե (committee) as կոմիտներ
 push	պուշ
-push	փուշ	near=գիթ, քոմիտ, մեեյն, գիտհաբ, ռեպո, ռեպոզիտորի, բրենչ, բրանչ, մեյն, մաստեր, օրիջին, քոմիթ, կոմիթ, ռիմոթ, ռիմոտ, ռեմոտ, մերջ, սթեշ, ստեշ, փուլ, պուլ; then=արա, արեք, անել, անեմ, անես, անի, անենք, անեք, անեն, անում, արել, արեցի, արեցիր, արեց, արեցինք, արեցին, կանեմ, կանես, կանի, կանենք, անելու, արած	# փուշ is also "thorn"
+push	փուշ	near=գիթ, քոմիտ, մեեյն, գիտհաբ, գիթհաբ, քիթհաբ, ռեպո, ռեպոզիտորի, բրենչ, բրանչ, մեյն, մաստեր, օրիջին, քոմիթ, կոմիթ, ռիմոթ, ռիմոտ, ռեմոտ, մերջ, սթեշ, ստեշ, փուլ, պուլ; then=արա, արեք, անել, անեմ, անես, անի, անենք, անեք, անեն, անում, արել, արեցի, արեցիր, արեց, արեցինք, արեցին, կանեմ, կանես, կանի, կանենք, անելու, արած	# փուշ is also "thorn"
 pull	պուլ
-pull	փուլ	near=գիթ, քոմիտ, մեեյն, գիտհաբ, ռեպո, ռեպոզիտորի, բրենչ, բրանչ, մեյն, մաստեր, օրիջին, քոմիթ, կոմիթ, ռիմոթ, ռիմոտ, ռեմոտ, մերջ, սթեշ, ստեշ, փուշ, պուշ; then=արա, արեք, անել, անեմ, անես, անի, անենք, անեք, անեն, անում, արել, արեցի, արեցիր, արեց, արեցինք, արեցին, կանեմ, կանես, կանի, կանենք, անելու, արած	# փուլ is also "stage"
-pull	փուր	near=գիթ, քոմիտ, մեեյն, գիտհաբ, ռեպո, ռեպոզիտորի, բրենչ, բրանչ, մեյն, մաստեր, օրիջին, քոմիթ, կոմիթ, ռիմոթ, ռիմոտ, ռեմոտ, մերջ, սթեշ, ստեշ, փուշ, պուշ; then=արա, արեք, անել, անեմ, անես, անի, անենք, անեք, անեն, անում, արել, արեցի, արեցիր, արեց, արեցինք, արեցին, կանեմ, կանես, կանի, կանենք, անելու, արած	# seen 2026-10-30 ("Փուր արա"); kept under the same rule to be safe
+pull	փուլ	near=գիթ, քոմիտ, մեեյն, գիտհաբ, գիթհաբ, քիթհաբ, ռեպո, ռեպոզիտորի, բրենչ, բրանչ, մեյն, մաստեր, օրիջին, քոմիթ, կոմիթ, ռիմոթ, ռիմոտ, ռեմոտ, մերջ, սթեշ, ստեշ, փուշ, պուշ; then=արա, արեք, անել, անեմ, անես, անի, անենք, անեք, անեն, անում, արել, արեցի, արեցիր, արեց, արեցինք, արեցին, կանեմ, կանես, կանի, կանենք, անելու, արած	# փուլ is also "stage"
+pull	փուր	near=գիթ, քոմիտ, մեեյն, գիտհաբ, գիթհաբ, քիթհաբ, ռեպո, ռեպոզիտորի, բրենչ, բրանչ, մեյն, մաստեր, օրիջին, քոմիթ, կոմիթ, ռիմոթ, ռիմոտ, ռեմոտ, մերջ, սթեշ, ստեշ, փուշ, պուշ; then=արա, արեք, անել, անեմ, անես, անի, անենք, անեք, անեն, անում, արել, արեցի, արեցիր, արեց, արեցինք, արեցին, կանեմ, կանես, կանի, կանենք, անելու, արած	# seen 2026-10-30 ("Փուր արա"); kept under the same rule to be safe
 stash	սթեշ, ստեշ, սթաշ, ստաշ
 remote	ռիմոթ, ռիմոտ, ռեմոտ, ռեմոթ, ռիմոութ
 branch	բրենչ, բրանչ
@@ -50,6 +52,37 @@ laptop	լեփթոփ, լեպտոպ, նոութ
 Claude	կլոդ, քլոդ	# կլոդ seen 2026-10-30; NLLB turned it into "cloud"
 CSV	սիեսբի, սիեսվի, սիէսվի	# սիեսբի seen 2026-10-30; NLLB turned it into "lesbians"
 speaker	սփիքեր, սպիկեր, սփիքր, սփիք
+
+# --- English: seen on the 2026-10-31 Meet call (two remote speakers + Hakob) ---
+# The `noboost` lines are the odd spellings the model really wrote; the boosted line is the spelling we want it
+# to write. Words the model splits are listed as two words and joined back (see glossary.py).
+Telegram	տելեգրամ, թելեգրամ, տելեգռամ
+Telegram	ծելեգրամ, ծերամ, ծերրամ, ծերրամե	noboost	# "telegram" came out as Ծերրամե / Ծերամ է (2026-10-31)
+Telegram bot	տելեգրամբոտ, թելեգրամբոտ, ծելեգրամբոտ	noboost	# glued, as the model writes it
+Telegram bot	ծելեգրամոգոտ	noboost	# seen 2026-10-31: "ծելեգրամոգոտը"
+bot	բոտ, բոթ	noboost	# short: kept out of boosting so it cannot pull բոտանիկա-like words
+authentication	աուտենտիֆիկացիա, աութենթիֆիկացիա, աուտենտիկացիա, աութենթիքեյշն, աուտենտիքեյշն
+authentication	աուտենտի ֆիկացիա, աուտենտի ֆիկացի	noboost	# split like this twice on 2026-10-31
+requirements	ռեքուայրմենթս, ռեքուայրմենթ, ռեքուայրմենտ, ռեքուայրմենտս, ռիքուայրմենթ, ռեքվայրմենթ
+requirements	ռեքորմենտ, ռեքուորմենտ	noboost	# seen 2026-10-31: ռեքորմենտների, ռեքուորմենտի
+terminal	տերմինալ, թերմինալ
+terminal	պերմինալ	noboost	# seen 2026-10-31
+terminal	տերմալ	near=բագ, գիթ, գիթհաբ, գիտհաբ, քիթհաբ, կոդ, քոմիթ, քոմիտ, լոկալ, լոգալ, սերվեր, հրաման, կոմանդ, ռան	# seen 2026-10-31; տերմալ is also "thermal"
+GitHub	գիթհաբ, գիտհաբ, գիթխաբ
+GitHub	քիթհաբ	noboost	# seen 2026-10-31: քիթհաբին
+local	լոկալ, լոքալ
+local	լոգալ, քոկալ	noboost	# seen 2026-10-31: "լոգալ պրոցես", "քոկալ մոդելը"
+browser	բրաուզեր, բրաուզր, բրավզեր
+browser	բրավազեր	noboost	# seen 2026-10-31: բրավազերի
+parameter	պարամետր, պառամետր	# պառամետրերով became "feet" (2026-10-31)
+argument	արգումենտ	# "Տենց արգումենտ ունենք" became "We have this stuff"
+live	լայվ	# "էս լայվը" became "I'm a slug"
+site	սայտ	# "միաց սայտ" became "join the stick"
+Google	գուգլ, գուգըլ
+transcription	տրանսկրիպցիա, տրանսկրիպշն, տրանսքրիփշն
+
+# --- Names: the screen keeps Armenian, NLLB gets the Latin spelling ---
+Hakob	հակոբ	mtonly; noboost	# NLLB turned Հակոբ into "Jacob" (2026-10-31)
 
 # --- English: workplace ---
 meeting	միթինգ	# միտինգ (with տ) is "rally" and stays Armenian

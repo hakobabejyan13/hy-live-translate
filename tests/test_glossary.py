@@ -62,7 +62,7 @@ def test_bad_lines_fail_loudly(tmp_path):
     with pytest.raises(ValueError, match="listed for both"):
         load(p)
     p.write_text("commit\tcommit\n", encoding="utf-8")
-    with pytest.raises(ValueError, match="not one Armenian word"):
+    with pytest.raises(ValueError, match="not Armenian words"):
         load(p)
 
 
@@ -119,3 +119,49 @@ def test_shipped_boost_list_has_no_ordinary_armenian_words():
 ])
 def test_glued_verb_and_new_spellings(spoken, shown):
     assert Glossary.from_file().apply(spoken).shown == shown
+
+
+def test_split_spelling_is_joined_and_keeps_its_ending(tmp_path):
+    p = tmp_path / "g.tsv"
+    p.write_text("authentication\tաուտենտիֆիկացիա\nauthentication\tաուտենտի ֆիկացիա, աուտենտի ֆիկացի\tnoboost\n",
+                 encoding="utf-8")
+    g = Glossary.from_file(p)
+    assert g.apply("Աուտենտի  ֆիկացիան չկար։").shown == "authentication-ն չկար։"
+    assert g.apply("աուտենտի ֆիկացի եւ").shown == "authentication եւ"
+    assert g.apply("աուտենտիֆիկացիա").shown == "authentication"
+    assert g.boost_phrases() == ["աուտենտիֆիկացիա"]  # split forms are never boosted
+    assert g.apply("մաուտենտի ֆիկացի").shown == "մաուտենտի ֆիկացի"  # must start a word
+
+
+def test_split_spelling_of_another_word_fails_loudly(tmp_path):
+    p = tmp_path / "g.tsv"
+    p.write_text("commit\tքոմիթ\npush\tքո միթ\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="listed for another word"):
+        Glossary.from_file(p)
+
+
+def test_mtonly_name_keeps_armenian_on_screen(tmp_path):
+    p = tmp_path / "g.tsv"
+    p.write_text("Hakob\tհակոբ\tmtonly; noboost\n", encoding="utf-8")
+    g = Glossary.from_file(p)
+    f = g.apply("Հակոբին ասա։")
+    assert f.shown == "Հակոբին ասա։" and f.for_mt == "Hakob-ին ասա։"
+    assert g.boost_phrases() == []
+
+
+@pytest.mark.parametrize("spoken, for_mt", [
+    # Lines from the 2026-10-31 Meet call, as the ASR wrote them.
+    ("Թասը պետք է սարքվի, որ ծելեգրամոգոտը լինի պլիզ միաց սայտ։",
+     "Թասը պետք է սարքվի, որ Telegram bot-ը լինի please միաց site։"),
+    ("Ծերամ է աուտենտի ֆիկացիա եւ տենց։", "Telegram է authentication եւ տենց։"),
+    ("Բան չկար ռեքուորմենտի մեջ։", "Բան չկար requirements-ի մեջ։"),
+    ("Մի հատ չոգեմ, բագ չ տերմալ ոնց կհասնեն, տերմալոգեն հիմնականում քիթհաբին։",
+     "Մի հատ չոգեմ, bug չ terminal ոնց կհասնեն, տերմալոգեն հիմնականում GitHub-ին։"),
+    ("Որովհետեւ էս լայվը, եթե պերմինալը նայես։", "Որովհետեւ էս live-ը, եթե terminal-ը նայես։"),
+    ("Կարելի ա բրավազերի համար։", "Կարելի ա browser-ի համար։"),
+    ("Կարողանք լոգալ պրոցեսին ավելի ուժեղ մոդել օգտագործենք։",
+     "Կարողանք local պրոցեսին ավելի ուժեղ մոդել օգտագործենք։"),
+    ("Տերմալ ջրերում լողացինք։", "Տերմալ ջրերում լողացինք։"),  # thermal waters: no tech word nearby
+])
+def test_meet_call_2026_10_31(spoken, for_mt):
+    assert Glossary.from_file().apply(spoken).for_mt == for_mt

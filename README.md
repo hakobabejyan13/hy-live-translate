@@ -211,6 +211,12 @@ the word to show and translate. Add a line when a word you use often comes out w
 `text_hy_asr` column of the latency CSV to see how the ASR spelled it. The file is checked at
 startup, and a broken line stops the program with a message.
 
+A word is only boosted in the ASR and fixed afterwards if it is in the file, so a new term (say `Telegram`)
+needs a line before it can work. Put the normal spelling on one line (boosted) and the odd spellings
+the ASR really wrote on another line marked `noboost`. A spelling can be two words when the ASR splits a
+loanword (`աուտենտի ֆիկացիա`), and `mtonly` keeps a name in Armenian on screen while NLLB gets the Latin
+spelling (`Հակոբ` is sent as `Hakob`, not translated as `Jacob`).
+
 ## Limitations
 
 - No echo cancellation: headphones are recommended so the mic does not pick up the call (see above).

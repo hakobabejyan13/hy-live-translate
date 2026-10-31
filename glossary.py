@@ -16,8 +16,14 @@ glossary.tsv format, one word per line (# starts a comment):
     target<TAB>spelling, spelling
     target<TAB>spelling, spelling<TAB>near=word, word; then=word, word
     target<TAB>spelling<TAB>noboost      (replace, but do not boost the spelling in the ASR)
+    target<TAB>spelling<TAB>mtonly       (Latin target sent to NLLB only; the screen keeps the Armenian word.
+                                          For names: Հակոբ stays Հակոբ on screen, NLLB gets Hakob, not Jacob)
 Spellings are matched case-insensitively against whole words; a spelling followed by one of SUFFIXES also
 matches. Edit the file to add your own words; it is read once at startup.
+
+A spelling may be two or more words, for a loanword the ASR splits apart ("աուտենտի ֆիկացիա" for
+authentication). The words are joined back into one before matching, so endings on the last word still work.
+Such split spellings are never boosted (the one-word spelling on its own line is what the ASR should write).
 
 Context rules (third column) are for spellings that are also ordinary Armenian words, like փուլ ("stage", but
 also "pull") or փուշ ("thorn", but also "push"). Such a word is only replaced when one of the `near` words is
@@ -62,6 +68,7 @@ class Entry:
     near: tuple = ()  # replace only if one of these is within NEAR_WORDS words...
     then: tuple = ()  # ...or the next word is one of these; both empty = always replace
     boost: bool = True  # also boost this spelling in the ASR (asr.Recognizer.set_boosting)
+    mt_only: bool = False  # Latin target goes to NLLB only; the screen keeps the Armenian word (names)
 
     @property
     def conditional(self):
@@ -75,7 +82,8 @@ class Fixed:
 
 
 def load(path=GLOSSARY_FILE):
-    """{armenian spelling (lowercase): Entry}. Duplicate spellings are an error, never a silent pick."""
+    """{armenian spelling (lowercase): Entry}. Duplicate spellings are an error, never a silent pick.
+    A split spelling keeps its single spaces ("աուտենտի ֆիկացիա"); Glossary joins it."""
     table = {}
     for n, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), 1):
         line = line.split("#", 1)[0].rstrip()
@@ -86,11 +94,11 @@ def load(path=GLOSSARY_FILE):
             raise ValueError(f"{path}:{n}: expected 'target<TAB>spelling, spelling', got {line!r}")
         target, spellings = parts[0].strip(), parts[1]
         entry = Entry(target, **parse_context(parts[2] if len(parts) > 2 else "", f"{path}:{n}"))
-        for s in (s.strip().lower() for s in spellings.split(",")):
+        for s in (" ".join(s.split()).lower() for s in spellings.split(",")):
             if not s:
                 continue
-            if not WORD.fullmatch(s):
-                raise ValueError(f"{path}:{n}: spelling {s!r} is not one Armenian word")
+            if not all(WORD.fullmatch(w) for w in s.split(" ")):
+                raise ValueError(f"{path}:{n}: spelling {s!r} is not Armenian words")
             if s in table and table[s] != entry:
                 raise ValueError(f"{path}:{n}: {s!r} is listed for both {table[s].target!r} and {target!r}")
             table[s] = entry
@@ -98,16 +106,20 @@ def load(path=GLOSSARY_FILE):
 
 
 def parse_context(text, where):
-    """'near=a, b; then=c; noboost' -> {"near": ("a", "b"), "then": ("c",), "boost": False}."""
+    """'near=a, b; then=c; noboost; mtonly' -> {"near": ("a", "b"), "then": ("c",), "boost": False, "mt_only": True}."""
     out = {}
     for part in filter(None, (p.strip() for p in text.split(";"))):
         if part == "noboost":
             out["boost"] = False
             continue
+        if part == "mtonly":
+            out["mt_only"] = True
+            continue
         key, _, words = part.partition("=")
         key = key.strip()
         if key not in ("near", "then") or not words.strip():
-            raise ValueError(f"{where}: context must look like 'near=word, word; then=word; noboost', got {part!r}")
+            raise ValueError(f"{where}: context must look like 'near=word, word; then=word; noboost; mtonly', "
+                             f"got {part!r}")
         out[key] = tuple(w.strip().lower() for w in words.split(",") if w.strip())
     return out
 
@@ -135,7 +147,25 @@ def _clauses(text):
 
 class Glossary:
     def __init__(self, table):
-        self.table = table
+        self.table = {}
+        self.split = set()  # joined forms of split spellings: matched, never boosted
+        joins = []
+        for spelling, entry in table.items():
+            words = spelling.split(" ")
+            if len(words) > 1:
+                joined = "".join(words)
+                joins.append(r"\s+".join(map(re.escape, words)))
+                other = table.get(joined) or self.table.get(joined)
+                if other is not None:
+                    if other.target != entry.target:
+                        raise ValueError(f"split spelling {spelling!r} joins to {joined!r}, listed for another word")
+                    continue  # the one-word spelling is listed too: its own entry (and boosting) wins
+                self.split.add(joined)
+                spelling = joined
+            self.table[spelling] = entry
+        # Start of a word only; the last word may go on (an ending), it is matched as one word after joining.
+        self._join = re.compile(r"(?<![\u0531-\u0587\uFB13-\uFB17A-Za-z])(?:" + "|".join(
+            sorted(joins, key=len, reverse=True)) + ")", re.IGNORECASE) if joins else None
 
     @classmethod
     def from_file(cls, path=GLOSSARY_FILE):
@@ -157,7 +187,7 @@ class Glossary:
     def boost_phrases(self):
         """Spellings to boost in the ASR. Not the context-rule ones (փուլ, փուշ...): they are ordinary Armenian
         words too, and boosting them would push the model toward them everywhere. Not entries marked noboost."""
-        return sorted(s for s, e in self.table.items() if e.boost and not e.conditional)
+        return sorted(s for s, e in self.table.items() if e.boost and not e.conditional and s not in self.split)
 
     @staticmethod
     def _context_ok(entry, words, i, suffix, verb):
@@ -178,7 +208,7 @@ class Glossary:
             for i, t in enumerate(tokens):
                 word = t.group(0)
                 hit = self._lookup(word) if WORD.fullmatch(word) else None
-                if hit is None or (english_only and not LATIN.search(hit[0].target)):
+                if hit is None or (english_only and (hit[0].mt_only or not LATIN.search(hit[0].target))):
                     continue
                 entry, suffix, verb = hit
                 if not self._context_ok(entry, words, i, suffix, verb):
@@ -194,4 +224,6 @@ class Glossary:
         return "".join(out)
 
     def apply(self, text_hy):
+        if self._join is not None:
+            text_hy = self._join.sub(lambda m: "".join(m.group(0).split()), text_hy)
         return Fixed(shown=self._sub(text_hy, english_only=True), for_mt=self._sub(text_hy, english_only=False))
