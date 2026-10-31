@@ -16,6 +16,14 @@ from short_lines import FRAGMENT, REPLY, SENTENCE, classify
     ("okay։", (REPLY, "Okay.")),
     ("Բալեքս։", (SENTENCE, "")),  # unknown single word: NLLB as usual
     ("֊ Լավ, դու ի՞նչպես ես։", (SENTENCE, "")),
+    # 2026-10-31 meeting run: hesitation sounds became "I'm going to go." / "What is it?"
+    ("Հը։", (FRAGMENT, "")),
+    ("Հհը՞։", (FRAGMENT, "")),
+    ("Էէ։", (FRAGMENT, "")),
+    ("Հըմ։", (FRAGMENT, "")),
+    ("Հա։", (REPLY, "Yeah.")),  # yes, not a filler
+    ("Եմ։", (SENTENCE, "")),  # "I am"
+    ("Այն։", (SENTENCE, "")),
 ])
 def test_classify(text, expected):
     assert classify(text) == expected

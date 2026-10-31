@@ -42,6 +42,7 @@ database	դեյթաբեյս, դատաբազա
 update	ափդեյթ, ապդեյթ, ափդեյտ
 install	ինստալ, ինսթոլ
 save	սեյվ
+save	սեյվահություն, սեյվ վայություն	noboost	# seen 2026-10-31: save + ություն ("saving"); NLLB made "suicide"
 download	դաունլոուդ, դաունլոդ
 upload	ափլոուդ, ապլոուդ
 login	լոգին
@@ -50,6 +51,7 @@ link	լինկ
 screenshot	սքրինշոթ, սկրինշոտ, սքրին
 laptop	լեփթոփ, լեպտոպ, նոութ
 Claude	կլոդ, քլոդ	# կլոդ seen 2026-10-30; NLLB turned it into "cloud"
+Claude	կլուբնիկա	noboost	# seen twice 2026-10-31 ("կլուբնիկա հետ քննարկել"); was mapped to ելակ (strawberry, клубника)
 CSV	սիեսբի, սիեսվի, սիէսվի	# սիեսբի seen 2026-10-30; NLLB turned it into "lesbians"
 speaker	սփիքեր, սպիկեր, սփիքր, սփիք
 
@@ -60,11 +62,14 @@ Telegram	տելեգրամ, թելեգրամ, տելեգռամ
 Telegram	ծելեգրամ, ծերամ, ծերրամ, ծերրամե	noboost	# "telegram" came out as Ծերրամե / Ծերամ է (2026-10-31)
 Telegram bot	տելեգրամբոտ, թելեգրամբոտ, ծելեգրամբոտ	noboost	# glued, as the model writes it
 Telegram bot	ծելեգրամոգոտ	noboost	# seen 2026-10-31: "ծելեգրամոգոտը"
+Telegram bot	դելեկտեմբոտ, օրկրամոտ, տելեգրամ բորդ, տելեգրան բորդ, էգրան բողոտ, դելեգման բոտ, դելեգրան բոտ	noboost	# seen 2026-10-31 meeting run
+Telegram	տելեգրան, դելեգրան, դելեգման	noboost	# seen 2026-10-31 meeting run
 bot	բոտ, բոթ	noboost	# short: kept out of boosting so it cannot pull բոտանիկա-like words
 authentication	աուտենտիֆիկացիա, աութենթիֆիկացիա, աուտենտիկացիա, աութենթիքեյշն, աուտենտիքեյշն
 authentication	աուտենտի ֆիկացիա, աուտենտի ֆիկացի	noboost	# split like this twice on 2026-10-31
 requirements	ռեքուայրմենթս, ռեքուայրմենթ, ռեքուայրմենտ, ռեքուայրմենտս, ռիքուայրմենթ, ռեքվայրմենթ
 requirements	ռեքորմենտ, ռեքուորմենտ	noboost	# seen 2026-10-31: ռեքորմենտների, ռեքուորմենտի
+requirements	ռեյվորման, ռեյվքորմենտ, ռեյգֆորմենս, ռեյգ ֆորմենս	noboost	# seen 2026-10-31 meeting run
 terminal	տերմինալ, թերմինալ
 terminal	պերմինալ	noboost	# seen 2026-10-31
 terminal	տերմալ	near=բագ, գիթ, գիթհաբ, գիտհաբ, քիթհաբ, կոդ, քոմիթ, քոմիտ, լոկալ, լոգալ, սերվեր, հրաման, կոմանդ, ռան	# seen 2026-10-31; տերմալ is also "thermal"
@@ -79,6 +84,13 @@ argument	արգումենտ	# "Տենց արգումենտ ունենք" became 
 live	լայվ	# "էս լայվը" became "I'm a slug"
 site	սայտ	# "միաց սայտ" became "join the stick"
 Google	գուգլ, գուգըլ
+LLM	էլէլէմ, էլէլեմ, էլ էլ էմ
+LLM	էլեմ, էլմ, էլլմ	noboost	# seen 2026-10-31 ("նորմալ էլմ ճարենք"); NLLB made "elm"
+LM Studio	էլեմ ստուդիա, էլմ ստուդիա, էլլմ ստուդիա, էլէմ ստուդիա	noboost	# seen 2026-10-31: "Էլլմ ստուդիա"
+ChatGPT	չաթջիպիտի, չատջիպիտի, չաթ ջիպիտի, չատ ջիպիտի	noboost
+GPT	ջիպիտի, ջիփիթի, ջիպիթի	# "ջիպիտի" became "Jepitt" (2026-10-31)
+glossary	գլոսարի, գլոսորի, գլոսարիյ
+glossary	գլոսորեր	noboost	# seen 2026-10-31: գլոսորերի
 transcription	տրանսկրիպցիա, տրանսկրիպշն, տրանսքրիփշն
 transcription	տրանսսկիա, տրանսկիպսիա, տրանսկրիպսիա	noboost	# seen 2026-10-31: "Տրանսսկիականի" = transcription կանի
 
@@ -91,7 +103,7 @@ call	կոլ
 call	քոլ	then=կանենք, անենք, անեմ, կանեմ, արա, արեք, արեցի, ունենք, ունեմ	# seen 2026-10-30; քոլ is also "bush"
 deadline	դեդլայն, դեդլաին, դեյլայն
 task	թասք, տասկ, ըասք
-task	թաս, թաաս	noboost	# seen 2026-10-31 ("Թասը պետք է սարքվի", "Թաասի միտք"); also "bowl", but rare in a work call
+task	թաս, թաաս, թազ	noboost	# seen 2026-10-31 ("Թասը պետք է սարքվի", "Թաասի միտք"); also "bowl", but rare in a work call
 feedback	ֆիդբեք, ֆիդբեկ
 report	ռեփորթ, ռեպորտ
 manager	մենեջեր, մենեջր
@@ -166,6 +178,9 @@ change	չենջ	# also the exchange office
 տոմս	բիլետ	# билет
 դրամարկղ	կասսա	noboost	# касса. noboost: the model wrote կհասնեն as կասսան (2026-10-30)
 մանր	սդաչա	# сдача
+համակարգիչ	կոմպ	# комп ("կոմպի վրա")
+համակարգիչդ	կոմպիտ	# комп + colloquial -իդ: "իմ կոմպիտ", "էս կոմպիտ վրա" (2026-10-31)
+հարցում	զապրոս, զակրոց	# запрос; զակրոցները seen 2026-10-31
 արձակուրդ	օտպուսկ, ատպուսկ	# отпуск
 աշխատավարձ	զարպլատա, զառպլատա	# зарплата
 թոշակ	պենսիա	# пенсия
@@ -177,5 +192,4 @@ change	չենջ	# also the exchange office
 ղեկավար	նաչալնիկ	# начальник
 մուտք	պադյեզդ, պոդյեզդ	# подъезд
 բազմոց	դիվան	# диван (also an old word for a poetry collection; rare in speech)
-ելակ	կլուբնիկա	# клубника
 ոստիկան	մենթ	# мент (slang)

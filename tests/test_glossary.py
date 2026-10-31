@@ -168,3 +168,24 @@ def test_mtonly_name_keeps_armenian_on_screen(tmp_path):
 ])
 def test_meet_call_2026_10_31(spoken, for_mt):
     assert Glossary.from_file().apply(spoken).for_mt == for_mt
+
+
+@pytest.mark.parametrize("spoken, for_mt", [
+    # Lines from the 2026-10-31 meeting run (latency_20261031_165728.csv), as the ASR wrote them.
+    ("Հիմա պետք ա, որ էգրան բողոտ։", "Հիմա պետք ա, որ Telegram bot։"),
+    ("Բելետ տելեգրամ բորդ ռեյվքորմենտը չի հասկանում։", "Բելետ Telegram bot requirements-ը չի հասկանում։"),
+    ("Ռեյգ ֆորմենսը չի հասկանում։", "requirements-ը չի հասկանում։"),
+    ("Դելեկտեմբոտ։", "Telegram bot։"),
+    ("Էս դելեգման բոտը, որ եթե մտնի Էլեմ, կարա դառնա դելեգրան բոտ։",
+     "Էս Telegram bot-ը, որ եթե մտնի LLM, կարա դառնա Telegram bot։"),
+    ("Նա է, Էլլմ ստուդիա։", "Նա է, LM Studio։"),
+    ("Խոսքիս Արմինեն ջիպիտի։", "Խոսքիս Արմինեն GPT։"),
+    ("Գլոսորերի մեջ գրել։", "glossary-ի մեջ գրել։"),
+    ("Այս թազը ավելացրեց։", "Այս task-ը ավելացրեց։"),
+    ("Կլուբնիկա հետ քննարկել։", "Claude հետ քննարկել։"),
+    ("Սեյվահությունը եղել ա, չէ՞։", "save-ը եղել ա, չէ՞։"),
+    ("Իմ կոմպիտ աշխատում ա։", "Իմ համակարգիչդ աշխատում ա։"),
+    ("Զակրոցները սրան ա գալիս։", "Հարցումները սրան ա գալիս։"),
+])
+def test_meeting_run_2026_10_31(spoken, for_mt):
+    assert Glossary.from_file().apply(spoken).for_mt == for_mt

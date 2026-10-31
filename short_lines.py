@@ -5,6 +5,8 @@ makes a whole sentence out of it ("John: I know."). Common one-word replies ("Ա
 ("Yes, you did.", "Is that right?"), because NLLB has no context. So, before translation:
   fragment  a single word of one letter, or a single word ending in "." (the model writes "։" at the end of a
             sentence and "." only after a cut-off word) -> not printed, logged with an empty translation.
+  filler    a single "hm" / "uh" sound ("Հը՞", "Հհը՞", "Էէ") -> dropped like a fragment; NLLB made them
+            "I'm going to go." and "What is it?" (2026-10-31)
   reply     a single word listed in REPLIES -> its English is used as is; a question mark (՞ or ?) is kept.
 Anything else goes to NLLB as usual.
 """
@@ -21,6 +23,10 @@ REPLIES = {
     "ապրես": "Thanks", "մերսի": "Thanks", "շնորհակալություն": "Thank you", "բարև": "Hi", "բարեւ": "Hi",
     "հաջող": "Bye", "բայ": "Bye", "բայբայ": "Bye", "բապայ": "Bye", "իհարկե": "Of course", "ճիշտ": "Right", "ճիշտա": "Right",
 }
+# Hesitation sounds: only the letters հ ը մ է, up to 4 of them (հը, հհը, հըմ, էէ, ըըը...), plus a few others.
+# Not ե: "եմ" is "I am". Not հա / ահա: those are "yes" (REPLIES).
+FILLER = re.compile(r"[\u0570\u0568\u0574\u0567]{1,4}")  # հ ը մ է
+FILLERS = {"ըհը", "ահ", "օհ", "էհ", "ըհ"}
 FRAGMENT, REPLY, SENTENCE = "fragment", "reply", "sentence"
 
 
@@ -31,7 +37,7 @@ def classify(text_hy):
         return (FRAGMENT, "") if not words else (SENTENCE, "")
     word = words[0]
     key = word.translate({ord(m): None for m in MARKS}).lower()
-    if len(key) == 1 or text_hy.rstrip().endswith("."):
+    if len(key) == 1 or text_hy.rstrip().endswith(".") or FILLER.fullmatch(key) or key in FILLERS:
         return FRAGMENT, ""
     if key in REPLIES:
         question = QUESTION in word or "?" in text_hy
