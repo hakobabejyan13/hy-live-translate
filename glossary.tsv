@@ -16,6 +16,7 @@
 # --- English: software and git (Hakob's examples) ---
 commit	քոմիթ, կոմիթ, քոմմիթ, կոմմիթ, քամիթ, քոմիտ	# քոմիտ seen 2026-10-30. Not կոմիտ: the model writes կոմիտե (committee) as կոմիտներ
 push	պուշ
+push	փուշու	noboost	# "փուշու բանը" (2026-10-31); not real Armenian (thorn is փշի)
 push	փուշ	near=գիթ, քոմիտ, մեեյն, գիտհաբ, գիթհաբ, քիթհաբ, ռեպո, ռեպոզիտորի, բրենչ, բրանչ, մեյն, մաստեր, օրիջին, քոմիթ, կոմիթ, ռիմոթ, ռիմոտ, ռեմոտ, մերջ, սթեշ, ստեշ, փուլ, պուլ; then=արա, արեք, անել, անեմ, անես, անի, անենք, անեք, անեն, անում, արել, արեցի, արեցիր, արեց, արեցինք, արեցին, կանեմ, կանես, կանի, կանենք, անելու, արած	# փուշ is also "thorn"
 pull	պուլ
 pull	փուլ	near=գիթ, քոմիտ, մեեյն, գիտհաբ, գիթհաբ, քիթհաբ, ռեպո, ռեպոզիտորի, բրենչ, բրանչ, մեյն, մաստեր, օրիջին, քոմիթ, կոմիթ, ռիմոթ, ռիմոտ, ռեմոտ, մերջ, սթեշ, ստեշ, փուշ, պուշ; then=արա, արեք, անել, անեմ, անես, անի, անենք, անեք, անեն, անում, արել, արեցի, արեցիր, արեց, արեցինք, արեցին, կանեմ, կանես, կանի, կանենք, անելու, արած	# փուլ is also "stage"
@@ -34,6 +35,7 @@ fix	ֆիքս
 release	ռելիզ, ռիլիզ
 build	բիլդ
 review	ռեվյու, ռիվյու, ռեյվ, ռեյվյու, ռիվ	# ռիվ seen 2026-10-30 ("review անի" -> ռիվանի)
+review	ռեւի	noboost	# "կոդը ռեւի արել ես" (2026-10-31 evening)
 request	ռեքվեստ, ռիքվեսթ
 frontend	ֆրոնտենդ, ֆրոնթենդ	# not ֆրոնտ: military front
 backend	բեքենդ, բեքէնդ	# not բեք alone: the model wrote feedback as ֆի֊բեք
@@ -51,7 +53,7 @@ link	լինկ
 screenshot	սքրինշոթ, սկրինշոտ, սքրին
 laptop	լեփթոփ, լեպտոպ, նոութ
 Claude	կլոդ, քլոդ	# կլոդ seen 2026-10-30; NLLB turned it into "cloud"
-Claude	կլուբնիկա	noboost	# seen twice 2026-10-31 ("կլուբնիկա հետ քննարկել"); was mapped to ելակ (strawberry, клубника)
+Claude	կլուբնիկա, կլոտ	noboost	# seen twice 2026-10-31 ("կլուբնիկա հետ քննարկել"); was mapped to ելակ (strawberry, клубника)
 CSV	սիեսբի, սիեսվի, սիէսվի	# սիեսբի seen 2026-10-30; NLLB turned it into "lesbians"
 speaker	սփիքեր, սպիկեր, սփիքր, սփիք
 
@@ -62,14 +64,14 @@ Telegram	տելեգրամ, թելեգրամ, տելեգռամ
 Telegram	ծելեգրամ, ծերամ, ծերրամ, ծերրամե	noboost	# "telegram" came out as Ծերրամե / Ծերամ է (2026-10-31)
 Telegram bot	տելեգրամբոտ, թելեգրամբոտ, ծելեգրամբոտ	noboost	# glued, as the model writes it
 Telegram bot	ծելեգրամոգոտ	noboost	# seen 2026-10-31: "ծելեգրամոգոտը"
-Telegram bot	դելեկտեմբոտ, օրկրամոտ, տելեգրամ բորդ, տելեգրան բորդ, էգրան բողոտ, դելեգման բոտ, դելեգրան բոտ	noboost	# seen 2026-10-31 meeting run
-Telegram	տելեգրան, դելեգրան, դելեգման	noboost	# seen 2026-10-31 meeting run
+Telegram bot	էլէլեմկրանբոտ, ծելեգրան բոտ, դելեկտեմբոտ, օրկրամոտ, տելեգրամ բորդ, տելեգրան բորդ, էգրան բողոտ, դելեգման բոտ, դելեգրան բոտ	noboost	# seen 2026-10-31 meeting run
+Telegram	տելեգրան, դելեգրան, դելեգման, ծելեգրան	noboost	# seen 2026-10-31 meeting run
 bot	բոտ, բոթ	noboost	# short: kept out of boosting so it cannot pull բոտանիկա-like words
 authentication	աուտենտիֆիկացիա, աութենթիֆիկացիա, աուտենտիկացիա, աութենթիքեյշն, աուտենտիքեյշն
 authentication	աուտենտի ֆիկացիա, աուտենտի ֆիկացի	noboost	# split like this twice on 2026-10-31
 requirements	ռեքուայրմենթս, ռեքուայրմենթ, ռեքուայրմենտ, ռեքուայրմենտս, ռիքուայրմենթ, ռեքվայրմենթ
 requirements	ռեքորմենտ, ռեքուորմենտ	noboost	# seen 2026-10-31: ռեքորմենտների, ռեքուորմենտի
-requirements	ռեյվորման, ռեյվքորմենտ, ռեյգֆորմենս, ռեյգ ֆորմենս	noboost	# seen 2026-10-31 meeting run
+requirements	ռիքվեսթմենտ, ռիքվեսթմենթ, ռեյվորման, ռեյվքորմենտ, ռեյգֆորմենս, ռեյգ ֆորմենս	noboost	# seen 2026-10-31 meeting run
 terminal	տերմինալ, թերմինալ
 terminal	պերմինալ	noboost	# seen 2026-10-31
 terminal	տերմալ	near=բագ, գիթ, գիթհաբ, գիտհաբ, քիթհաբ, կոդ, քոմիթ, քոմիտ, լոկալ, լոգալ, սերվեր, հրաման, կոմանդ, ռան	# seen 2026-10-31; տերմալ is also "thermal"
@@ -84,18 +86,21 @@ argument	արգումենտ	# "Տենց արգումենտ ունենք" became 
 live	լայվ	# "էս լայվը" became "I'm a slug"
 site	սայտ	# "միաց սայտ" became "join the stick"
 Google	գուգլ, գուգըլ
-LLM	էլէլէմ, էլէլեմ, էլ էլ էմ
+LLM	էլէլէմ, էլէլեմ, էլ էլ էմ	noboost	# boosting it turned "telegram bot" into էլէլեմկրանբոտ (2026-10-31 evening)
 LLM	էլեմ, էլմ, էլլմ	noboost	# seen 2026-10-31 ("նորմալ էլմ ճարենք"); NLLB made "elm"
 LM Studio	էլեմ ստուդիա, էլմ ստուդիա, էլլմ ստուդիա, էլէմ ստուդիա	noboost	# seen 2026-10-31: "Էլլմ ստուդիա"
 ChatGPT	չաթջիպիտի, չատջիպիտի, չաթ ջիպիտի, չատ ջիպիտի	noboost
 GPT	ջիպիտի, ջիփիթի, ջիպիթի	# "ջիպիտի" became "Jepitt" (2026-10-31)
 glossary	գլոսարի, գլոսորի, գլոսարիյ
-glossary	գլոսորեր	noboost	# seen 2026-10-31: գլոսորերի
+glossary	գլոսորեր, գլոսոր	noboost	# "Գլոսո՞ր", "Գլոսոր իմ ավելացվել էր"
+glossary-ում	գլոսոր իմ, գլոսորիմ	noboost	# = glossary-ում, split by the ASR	# seen 2026-10-31: գլոսորերի
 transcription	տրանսկրիպցիա, տրանսկրիպշն, տրանսքրիփշն
 transcription	տրանսսկիա, տրանսկիպսիա, տրանսկրիպսիա	noboost	# seen 2026-10-31: "Տրանսսկիականի" = transcription կանի
 
 # --- Names: the screen keeps Armenian, NLLB gets the Latin spelling ---
 Hakob	հակոբ	mtonly; noboost	# NLLB turned Հակոբ into "Jacob" (2026-10-31)
+Hakob	հոգոփ	mtonly; noboost	# "Բարեւ հոգոփ" (2026-10-31 evening)
+Alex	անեքս	mtonly; noboost	# "Բարեւ անեքս" -> "Hello, Annex"
 
 # --- English: workplace ---
 meeting	միթինգ	# միտինգ (with տ) is "rally" and stays Armenian
@@ -106,6 +111,14 @@ task	թասք, տասկ, ըասք
 task	թաս, թաաս, թազ	noboost	# seen 2026-10-31 ("Թասը պետք է սարքվի", "Թաասի միտք"); also "bowl", but rare in a work call
 feedback	ֆիդբեք, ֆիդբեկ
 report	ռեփորթ, ռեպորտ
+private	պրայվիտ, պրայվետ, պրայվատ
+private	պրիվետ	near=ռեպո, ռեպոզիտորի, պրոյեկտ, սարքել, սարքեմ, սարքեց, գիթ, գիթհաբ, գիտհաբ, քիթհաբ, փաբլիկ, պաբլիկ, կոդ	# was привет -> բարև, wrong both times it was heard (2026-10-31)
+private	բրայվիդ	noboost
+էս private	էսբրայվիդ	noboost	# "էսբրայվիդ բան ա" (2026-10-31 evening)
+public	փաբլիկ, պաբլիկ
+public	թաբլիկ	noboost	# "թաբլիկ սարքեմ" (2026-10-31 evening)
+CPU	սիփիյու, սիպիյու, սիփի	# "խոսքի սիփի վրա կարողանա աշխատի" became "speech line"
+GPU	ջիփիյու, ջիպիյու
 manager	մենեջեր, մենեջր
 team lead	թիմլիդ, տիմլիդ
 standup	սթենդափ, ստենդապ
@@ -143,7 +156,7 @@ change	չենջ	# also the exchange office
 
 # --- Russian: discourse words and fillers -> Armenian ---
 ընդհանրապես	վաբշե, վապշե, վապշա, վաբշա, վոբշե, վոոբշե	# вообще
-կարճ ասած	կարոչե, կառոչե	# короче
+կարճ ասած	կարոչե, կառոչե, կառոչի, կարոչի	# короче
 իհարկե	կանեշնա, կանեչնո, կոնեչնո	# конечно
 ճիշտ	տոչնը, տոչնո	# точно
 ուղղակի	պրոստը, պրոստո	# просто
@@ -158,7 +171,6 @@ change	չենջ	# also the exchange office
 բոլորովին	սավսեմ	# совсем
 վերջ	վսյո	# всё
 շնորհակալություն	սպասիբա, մերսի	# спасибо, merci
-բարև	պրիվետ	# привет
 հաջող	պակա	# пока
 խնդիր	պռոբլեմ	# проблема (the ASR may also write the standard պրոբլեմ, left alone)
 տարբերակ	վարիանտ	# вариант

@@ -24,6 +24,8 @@ from short_lines import FRAGMENT, REPLY, SENTENCE, classify
     ("Հա։", (REPLY, "Yeah.")),  # yes, not a filler
     ("Եմ։", (SENTENCE, "")),  # "I am"
     ("Այն։", (SENTENCE, "")),
+    ("Հլա։", (REPLY, "Hold on.")),  # NLLB: "I'm going to go."
+    ("Սպասի։", (REPLY, "Wait.")),  # NLLB: "I'm going to wait."
 ])
 def test_classify(text, expected):
     assert classify(text) == expected

@@ -180,7 +180,7 @@ def test_meet_call_2026_10_31(spoken, for_mt):
      "Էս Telegram bot-ը, որ եթե մտնի LLM, կարա դառնա Telegram bot։"),
     ("Նա է, Էլլմ ստուդիա։", "Նա է, LM Studio։"),
     ("Խոսքիս Արմինեն ջիպիտի։", "Խոսքիս Արմինեն GPT։"),
-    ("Գլոսորերի մեջ գրել։", "glossary-ի մեջ գրել։"),
+    ("Գլոսորերի մեջ գրել։", "glossary-երի մեջ գրել։"),
     ("Այս թազը ավելացրեց։", "Այս task-ը ավելացրեց։"),
     ("Կլուբնիկա հետ քննարկել։", "Claude հետ քննարկել։"),
     ("Սեյվահությունը եղել ա, չէ՞։", "save-ը եղել ա, չէ՞։"),
@@ -189,3 +189,27 @@ def test_meet_call_2026_10_31(spoken, for_mt):
 ])
 def test_meeting_run_2026_10_31(spoken, for_mt):
     assert Glossary.from_file().apply(spoken).for_mt == for_mt
+
+
+@pytest.mark.parametrize("spoken, for_mt", [
+    # Evening run 2026-10-31 (latency_20261031_234042.csv), the part about words cut in half.
+    ("Գլոսոր իմ ավելացվել էր։", "glossary-ում ավելացվել էր։"),
+    ("Գլոսո՞ր։", "glossary?։"),  # ՞ inside the word no longer hides it
+    ("Նոր բառեր հասկացություններ ռիքվեսթմենտը հասկացել ա, էլէլեմկրանբոտ բառերը հասկացվեն։",
+     "Նոր բառեր հասկացություններ requirements-ը հասկացել ա, Telegram bot բառերը հասկացվեն։"),
+    ("Խնդիրը ոչ թե ծելեգրան բոտ կամ ռիքվեսթ բառերի։", "Խնդիրը ոչ թե Telegram bot կամ request բառերի։"),
+    ("Իսկ վերջի կոդը ռեւի արել ե՞ս։", "Իսկ վերջի կոդը review արել ե՞ս։"),
+    ("Բարեւ հոգոփ, ոնց ես։", "Բարեւ Hakob, ոնց ես։"),
+    ("Խոսքի սիփի վրա կարողանա աշխատի։", "Խոսքի CPU վրա կարողանա աշխատի։"),
+    ("Վերջնական փուշու բանը վաղն եմ անելու։", "Վերջնական push բանը վաղն եմ անելու։"),
+    ("Փաբլիկ տեսարք ես։", "public տեսարք ես։"),
+    ("Չ մեզ չի տենց սարքել պրիվետ էինք։", "Չ մեզ չի տենց սարքել private էինք։"),
+    ("Պրիվետ, ոնց ես։", "Պրիվետ, ոնց ես։"),  # no tech word nearby: left alone
+])
+def test_evening_run_2026_10_31(spoken, for_mt):
+    assert Glossary.from_file().apply(spoken).for_mt == for_mt
+
+
+def test_boost_list_leaves_out_llm():
+    """Boosting էլէլեմ turned "telegram bot" into էլէլեմկրանբոտ."""
+    assert not set(Glossary.from_file().boost_phrases()) & {"էլէլէմ", "էլէլեմ"}

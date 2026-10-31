@@ -47,7 +47,7 @@ GLOSSARY_FILE = Path(__file__).parent / "glossary.tsv"
 # endings -ս / -դ are left out: with them պակա (пока) + ս would turn the common word պակաս ("less") into a match.
 SUFFIXES = sorted({"ը", "ն", "ի", "ին", "ից", "ով", "ում", "եր", "երը", "երի", "երով", "ները", "ներ", "ների", "ներին",
                    "ներից", "ներով", "ներում", "ա", "ել", "ենք", "եցի", "եց", "ես", "եմ", "ելու",
-                   "ելը", "ած", "եցին", "եցիր", "եք", "են",
+                   "ելը", "ած", "եցին", "եցիր", "եք", "են", "ինը",
                    "յի", "յին", "յից", "յով", "յում"},  # after a vowel: մաշինայի
                   key=len, reverse=True)
 # Forms of անել ("to do") that the ASR glues onto a loanword; only the ան- and կան- forms, since արա- endings would also
@@ -59,8 +59,10 @@ WORD = re.compile(r"[Ա-ևﬓ-ﬗ]+")  # a run of Armenian letters
 LATIN = re.compile(r"[A-Za-z]")
 TOKEN = re.compile(r"[\u0531-\u0587\uFB13-\uFB17A-Za-z]+")  # Armenian or Latin word, for context checks
 NEAR_WORDS = 3
-CLAUSE_END = re.compile(r"[,.;:!?\u0589\u055D\u055E\u055C]")  # also Armenian ։ ՝ ՞ ՜: context stops here
+CLAUSE_END = re.compile(r"[,.;:!?\u0589\u055D]")  # also Armenian ։ ՝; not ՞ ՜, written inside a word
 VOWELS = "աեէիոօու"
+QUESTION = "\u055e"  # ՞, written inside the word it asks about
+MARKS = {ord(c): None for c in "\u055b\u055c\u055e"}  # ՛ ՜ ՞: dropped for the lookup
 
 
 @dataclass(frozen=True)
@@ -208,7 +210,9 @@ class Glossary:
             words = [t.group(0).lower() for t in tokens]
             for i, t in enumerate(tokens):
                 word = t.group(0)
-                hit = self._lookup(word) if WORD.fullmatch(word) else None
+                question = QUESTION in word
+                word = word.translate(MARKS)  # "Գլոսո՞ր" is looked up as "գլոսոր"
+                hit = self._lookup(word) if word and WORD.fullmatch(word) else None
                 if hit is None or (english_only and (hit[0].mt_only or not LATIN.search(hit[0].target))):
                     continue
                 entry, suffix, verb = hit
@@ -217,6 +221,8 @@ class Glossary:
                 new = attach(entry.target, suffix) if suffix else entry.target
                 if verb:
                     new = f"{new} {verb}"
+                if question:
+                    new += "?"  # the ՞ was inside the replaced word
                 if word[0].isupper() and not LATIN.search(entry.target):
                     new = new[0].upper() + new[1:]  # keep the capital at the start of a sentence
                 out += [text[pos:t.start()], new]
