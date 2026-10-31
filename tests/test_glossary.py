@@ -205,6 +205,10 @@ def test_meeting_run_2026_10_31(spoken, for_mt):
     ("Փաբլիկ տեսարք ես։", "public տեսարք ես։"),
     ("Չ մեզ չի տենց սարքել պրիվետ էինք։", "Չ մեզ չի տենց սարքել private էինք։"),
     ("Պրիվետ, ոնց ես։", "Պրիվետ, ոնց ես։"),  # no tech word nearby: left alone
+    # Hakob: "կառոչի կոդը ռեվյու" (короче, code review)
+    ("Կակցչիկ կոն ռեվյու արեցի, հիմնականում։", "Կարճ ասած code review արեցի, հիմնականում։"),
+    ("Կաքցիկ կոն ռեվյու արեցի։", "Կարճ ասած code review արեցի։"),
+    ("Կոն տեսա։", "Կոն տեսա։"),
 ])
 def test_evening_run_2026_10_31(spoken, for_mt):
     assert Glossary.from_file().apply(spoken).for_mt == for_mt
