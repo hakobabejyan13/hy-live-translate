@@ -2,7 +2,7 @@
 
 Exported conversations between Hakob and Claude from the Claude project used to build this program, as the challenge rules require. The project chat is where requests came in; each task ran in its own thread.
 
-Times are UTC. Progress checklists, device-connection events and notes passed between the coordinator and threads are kept, so the order of work is visible. Files that were attached in chat (logs, patches, PLAN.md, DECISIONS.md) are named but not included.
+Times are UTC. Progress checklists, device-connection events and notes passed between the coordinator and threads are kept, so the order of work is visible. Files that were attached in chat (logs, patches) are named but not included. PLAN.md and DECISIONS.md are at the repository root.
 
 | # | Transcript | Started |
 |---|---|---|

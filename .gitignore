@@ -219,10 +219,6 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Local planning notes (not part of the submission)
-PLAN.md
-DECISIONS.md
-
 # Latency logs written by skeleton.py
 logs/
 
