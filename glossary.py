@@ -16,6 +16,7 @@ glossary.tsv format, one word per line (# starts a comment):
     target<TAB>spelling, spelling
     target<TAB>spelling, spelling<TAB>near=word, word; then=word, word
     target<TAB>spelling<TAB>noboost      (replace, but do not boost the spelling in the ASR)
+    target<TAB>spelling<TAB>noglue       (never split a glued verb off it: թալ + անում is "looting")
     target<TAB>spelling<TAB>mtonly       (Latin target sent to NLLB only; the screen keeps the Armenian word.
                                           For names: Հակոբ stays Հակոբ on screen, NLLB gets Hakob, not Jacob)
 Spellings are matched case-insensitively against whole words; a spelling followed by one of SUFFIXES also
@@ -72,6 +73,7 @@ class Entry:
     then: tuple = ()  # ...or the next word is one of these; both empty = always replace
     boost: bool = True  # also boost this spelling in the ASR (asr.Recognizer.set_boosting)
     mt_only: bool = False  # Latin target goes to NLLB only; the screen keeps the Armenian word (names)
+    glue: bool = True  # also match with a glued verb ("թալ" + "անում"); off when that makes a real word (թալանում)
 
     @property
     def conditional(self):
@@ -117,6 +119,9 @@ def parse_context(text, where):
             continue
         if part == "mtonly":
             out["mt_only"] = True
+            continue
+        if part == "noglue":
+            out["glue"] = False
             continue
         key, _, words = part.partition("=")
         key = key.strip()
@@ -183,7 +188,7 @@ class Glossary:
             if low.endswith(suffix) and low[:-len(suffix)] in self.table:
                 return self.table[low[:-len(suffix)]], word[-len(suffix):], ""
         for verb in VERB_ENDINGS:
-            if low.endswith(verb) and low[:-len(verb)] in self.table:
+            if low.endswith(verb) and low[:-len(verb)] in self.table and self.table[low[:-len(verb)]].glue:
                 return self.table[low[:-len(verb)]], "", word[-len(verb):]
         return None
 

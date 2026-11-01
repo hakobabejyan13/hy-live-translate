@@ -44,6 +44,7 @@ developer	դեվելոպեր, դեվելոփեր	# not դև: demon
 database	դեյթաբեյս, դատաբազա
 update	ափդեյթ, ապդեյթ, ափդեյտ
 install	ինստալ, ինսթոլ
+install	թալ	then=անեմ, անենք, անես, անի, անեք, անեն, անել, անելու, անում, արա, արեք, արեցի, արեց, արել, կանեմ, կանենք, կանես, կանի; noglue	# Hakob 2026-11-01: "թալ անեմ" = install անեմ. noglue: թալանում/թալանեմ is "looting/rob"
 save	սեյվ
 save	սեյվահություն, սեյվ վայություն	noboost	# seen 2026-10-31: save + ություն ("saving"); NLLB made "suicide"
 download	դաունլոուդ, դաունլոդ
