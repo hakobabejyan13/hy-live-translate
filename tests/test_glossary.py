@@ -217,3 +217,20 @@ def test_evening_run_2026_10_31(spoken, for_mt):
 def test_boost_list_leaves_out_llm():
     """Boosting էլէլեմ turned "telegram bot" into էլէլեմկրանբոտ."""
     assert not set(Glossary.from_file().boost_phrases()) & {"էլէլէմ", "էլէլեմ"}
+
+
+@pytest.mark.parametrize("spoken, for_mt", [
+    # Run 2026-11-01 (latency_20261101_190612.csv).
+    ("Նեկ խոսենք տելեգրամ բոտ կամ ռեյվքուերմենտ։", "Նեկ խոսենք Telegram bot կամ requirements։"),
+    ("Ռեյք ումենտ։", "requirements։"),
+    ("Ռիքվայմենտը։", "requirements-ը։"),
+    ("Ի՞նչ է ինձ թալ անեմ կոմպիս վրա։", "Ի՞նչ է ինձ թալ անեմ համակարգիչս վրա։"),
+    ("Ինքը կոնտեքստից ա ջոգում, երեւի։", "Ինքը կոնտեքստից ա հասկանում, երեւի։"),
+    ("Նպենը ճիշտ է գրել պռոստը առաջին։", "Նպենը ճիշտ է գրել ուղղակի առաջին։"),
+    ("Ինքը ֆուլ գրական չի։", "Ինքը լրիվ գրական չի։"),
+    ("Ռանդոն բան ենք գրում։", "random բան ենք գրում։"),
+    ("Հետո թեեստ անենք։", "Հետո test անենք։"),
+    ("Մեր ափլիկացիո՞նը։", "Մեր application-ը?։"),
+])
+def test_run_2026_11_01(spoken, for_mt):
+    assert Glossary.from_file().apply(spoken).for_mt == for_mt

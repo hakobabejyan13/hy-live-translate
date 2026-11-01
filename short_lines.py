@@ -22,7 +22,7 @@ REPLIES = {
     "լավ": "Okay", "լավը": "Okay", "okay": "Okay", "ok": "Okay",
     "ապրես": "Thanks", "մերսի": "Thanks", "շնորհակալություն": "Thank you", "բարև": "Hi", "բարեւ": "Hi",
     "հաջող": "Bye", "բայ": "Bye", "բայբայ": "Bye", "բապայ": "Bye", "իհարկե": "Of course", "ճիշտ": "Right", "ճիշտա": "Right",
-    "հլա": "Hold on", "հլը": "Hold on", "սպասի": "Wait", "սպասիր": "Wait",  # NLLB: "I'm going to go.", "I'm going to wait."
+    "դե": "Well", "հլա": "Hold on", "հլը": "Hold on", "սպասի": "Wait", "սպասիր": "Wait",  # NLLB: "I'm going to go.", "I'm going to wait."
 }
 # Hesitation sounds: only the letters հ ը մ է, up to 4 of them (հը, հհը, հըմ, էէ, ըըը...), plus a few others.
 # Not ե: "եմ" is "I am". Not հա / ահա: those are "yes" (REPLIES).
