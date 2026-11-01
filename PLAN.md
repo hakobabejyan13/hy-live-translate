@@ -44,8 +44,8 @@ only touches that module.
 
 ```
  mic ──────> audio_capture ─┐
-                            ├─> vad ─> asr ─> translate ─> cli
- loopback ─> audio_capture ─┘          └──> speaker ──────┘
+                            ├─> vad ─> asr ─> glossary ─> short_lines ─> translate ─> cli
+ loopback ─> audio_capture ─┘          └──> speaker ───────────────────────────────┘
 ```
 
 One capture thread per source. Each source has its own VAD that cuts its stream into segments.
@@ -60,9 +60,11 @@ Every segment carries timestamps from each stage so latency is logged per stage:
 | Module | Input | Output |
 |---|---|---|
 | `audio_capture` | Device (mic or WASAPI loopback), source name | Stream of `AudioChunk(source: "mic" \| "loopback", samples: np.ndarray[float32], 16 kHz mono, t_captured: float)` |
-| `vad` | `AudioChunk` stream for one source | `Segment(source, samples, t_speech_start, t_speech_end, t_vad_done)`. Cut at pauses, max length ~5 s so long speech never blows the latency budget. |
+| `vad` | `AudioChunk` stream for one source | `Segment(source, samples, t_speech_start, t_speech_end, t_vad_done)`. Cut at pauses. From 5 s, a long segment is cut at the next real gap between words (>= 0.15 s quiet, last 2 s searched), at 7 s at the best point found, so words are not split and the line still prints inside the 5 s budget (decision 21). |
 | `asr` | `Segment` | `Transcript(segment, text_hy: str, avg_logprob: float, no_speech_prob: float, t_asr_done)` |
 | `speaker` | `Segment` | Label: `ME`, `SPEAKER N` or `SPEAKER ?` (rules below) |
+| `glossary` | `Transcript.text_hy` | Screen text (loanwords in English, endings kept with a hyphen) and the text sent to MT (names, Russian slang mapped for NLLB only); also the spellings to boost in ASR (decisions 13-15, 20-25) |
+| `short_lines` | Text after the glossary | `kind`: `fragment` (logged, not printed or translated), `reply` (fixed English, skips MT) or `sentence` (decisions 17-18, 22) |
 | `translate` | `Transcript` | `Translation(transcript, text_en: str, t_mt_done)` |
 | `cli` | `Translation` + label | One printed line plus the latency breakdown, with `t_printed` taken at print time |
 
@@ -121,15 +123,19 @@ Example line:
 latency median 0.51 s, max 2.03 s, nothing over 5 s; speaker labels correct. Details in DECISIONS.md
 (decisions 15-19 and the baseline table). README.md is on `dev`.
 
+**Update (2026-11-01):** after more live calls with heavy jargon, the glossary format was extended and the
+VAD forced cut now waits for a gap between words (decisions 20-25). Latest live run `20261101_190612`
+(124 lines): median 0.60 s, nothing over 5 s. `dev` was merged into `main` on 2026-11-01.
+
 Commit after every working step. If a fix fails three times, revert to the last working commit.
 
 ## 7. Risks
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| ASR weak on Armenian or on English/Russian loanwords | Poor transcripts and translations | Done: whisper-turbo (WER ~70% live) replaced by NeMo FastConformer (FLEURS WER 10.6%); loanwords handled by the glossary plus phrase boosting (decisions 13-15). |
+| ASR weak on Armenian or on English/Russian loanwords | Poor transcripts and translations | Done: whisper-turbo (WER ~70% live) replaced by NeMo FastConformer (FLEURS WER 10.6%); loanwords handled by the glossary plus phrase boosting (decisions 13-15, 20-25). Words the ASR turns into different real Armenian words stay a known limit. |
 | RTX 5070 (Blackwell) needs recent CUDA / cuDNN / CTranslate2 / PyTorch builds | Skeleton does not run on GPU | Check library support for this GPU before installing; log the working versions in DECISIONS.md. |
-| Latency over 5 s | Fails the requirement | Per-stage latency logging shows which stage is slow; cap segment length at ~5 s. |
+| Latency over 5 s | Fails the requirement | Per-stage latency logging shows which stage is slow; long speech is cut from 5 s at a pause between words, at 7 s at the latest (decision 21). |
 | Loopback format differs between devices (44.1 vs 48 kHz, stereo vs more channels) | Wrong pitch/speed or crash | Read the native format from the device, resample and downmix in `audio_capture`, fail loudly on anything unexpected. |
 | Mic picks up the speakers (no echo handling by rule) | Remote speech transcribed twice, once as `ME` | Headphones recommended, not required: Hakob tested without them and it worked fine. Noted in the README as a known limitation. |
 | ASR or MT invents text from noise or half-word fragments ("Հովհ." -> "John: I know.") | Fake lines | VAD only passes speech; segments under 0.5 s are held and joined to speech within 1 s, else dropped; one-letter or cut-off single words are logged as `fragment` and not printed (decisions 16-17). `avg_logprob` is printed per line so weak lines are visible. |
